@@ -1,0 +1,91 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Attendance;
+use App\Models\AttendanceRegularization;
+use App\Models\Employee;
+use App\Models\Shift;
+use Carbon\Carbon;
+use Carbon\CarbonInterface;
+
+class AttendanceService
+{
+    public function activeShiftForEmployee(Employee $employee, CarbonInterface $date): ?Shift
+    {
+        $employeeShift = $employee->employeeShifts()
+            ->where('effective_from', '<=', $date->toDateString())
+            ->where(fn ($q) => $q->whereNull('effective_to')->orWhere('effective_to', '>=', $date->toDateString()))
+            ->orderByDesc('effective_from')
+            ->first();
+
+        return $employeeShift?->shift;
+    }
+
+    public function recalculate(Attendance $attendance): void
+    {
+        if (! $attendance->first_in || ! $attendance->last_out) {
+            $attendance->save();
+
+            return;
+        }
+
+        $date = $attendance->attendance_date->toDateString();
+        $in = Carbon::parse("{$date} {$attendance->first_in}");
+        $out = Carbon::parse("{$date} {$attendance->last_out}");
+
+        if ($out->lessThan($in)) {
+            $out->addDay();
+        }
+
+        $totalMinutes = $in->diffInMinutes($out);
+        $shift = $this->activeShiftForEmployee($attendance->employee, $attendance->attendance_date);
+
+        $breakMinutes = $shift?->break_minutes ?? 0;
+        $effectiveMinutes = max($totalMinutes - $breakMinutes, 0);
+
+        $attendance->total_hours = round($totalMinutes / 60, 2);
+        $attendance->effective_hours = round($effectiveMinutes / 60, 2);
+
+        if ($shift) {
+            $shiftStart = Carbon::parse("{$date} {$shift->start_time}");
+            $shiftEnd = Carbon::parse("{$date} {$shift->end_time}");
+            $graceEnd = (clone $shiftStart)->addMinutes($shift->grace_minutes);
+
+            $attendance->late_minutes = $in->greaterThan($graceEnd) ? $graceEnd->diffInMinutes($in) : 0;
+            $attendance->early_going_minutes = $out->lessThan($shiftEnd) ? $out->diffInMinutes($shiftEnd) : 0;
+
+            $minFullDayMinutes = (float) $shift->min_full_day_hours * 60;
+            $minHalfDayMinutes = (float) $shift->min_half_day_hours * 60;
+
+            if ($effectiveMinutes >= $minFullDayMinutes) {
+                $attendance->status = Attendance::STATUS_PRESENT;
+            } elseif ($effectiveMinutes >= $minHalfDayMinutes) {
+                $attendance->status = Attendance::STATUS_HALF_DAY;
+            }
+        }
+
+        $attendance->save();
+    }
+
+    /**
+     * Apply an approved regularization's corrected values to the day's attendance record,
+     * preserving the pre-correction values that were captured on submission.
+     */
+    public function applyRegularization(AttendanceRegularization $regularization): void
+    {
+        $attendance = Attendance::firstOrNew([
+            'employee_id' => $regularization->employee_id,
+            'attendance_date' => $regularization->attendance_date->toDateString(),
+        ]);
+
+        $attendance->fill($regularization->requested_values);
+        $attendance->source = 'manual';
+
+        if (! $attendance->exists) {
+            $attendance->status ??= Attendance::STATUS_PRESENT;
+        }
+
+        $this->recalculate($attendance);
+    }
+}
