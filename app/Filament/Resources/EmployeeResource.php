@@ -134,6 +134,11 @@ class EmployeeResource extends Resource
                             Forms\Components\DatePicker::make('confirmation_date'),
                             Forms\Components\TextInput::make('probation_period_days')->numeric(),
                             Forms\Components\TextInput::make('notice_period_days')->numeric(),
+                            Forms\Components\TextInput::make('biometric_enroll_id')
+                                ->label('Biometric Device ID')
+                                ->helperText('The user/enrollment ID configured for this employee on the biometric device.')
+                                ->maxLength(50)
+                                ->unique(ignoreRecord: true),
                         ])
                         ->columns(2),
 
@@ -182,6 +187,7 @@ class EmployeeResource extends Resource
                     ->searchable(['first_name', 'last_name'])
                     ->sortable(query: fn (Builder $q, string $direction) => $q->orderBy('first_name', $direction)),
                 Tables\Columns\TextColumn::make('official_email')->searchable()->toggleable(),
+                Tables\Columns\TextColumn::make('biometric_enroll_id')->label('Device ID')->searchable()->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('department.name')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('designation.name')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('reportingManager.full_name')->label('Reporting Manager')->toggleable(),

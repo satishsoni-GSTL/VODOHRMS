@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Attendance;
 use App\Models\AuditLog;
 use App\Models\Company;
 use App\Models\Employee;
@@ -62,6 +63,21 @@ class AuditAndReportsSmokeTest extends TestCase
 
         $this->get('/admin/audit-logs')->assertStatus(200);
         $this->get('/admin/reports')->assertStatus(200);
+
+        Attendance::create([
+            'employee_id' => $admin->employee_id,
+            'attendance_date' => now()->startOfMonth()->addDays(1)->toDateString(),
+            'first_in' => '09:05:00',
+            'last_out' => '18:10:00',
+            'status' => Attendance::STATUS_PRESENT,
+            'source' => 'biometric',
+        ]);
+
+        $response = $this->get('/admin/attendance-monthly-view');
+        $response->assertStatus(200);
+        // Colors must be inline styles, not Tailwind utility classes: Filament's pre-compiled
+        // panel CSS doesn't ship arbitrary semantic-color classes like bg-success-50.
+        $response->assertSee('background-color:#C6EFCE', false);
     }
 
     public function test_plain_employee_is_blocked_from_audit_logs(): void

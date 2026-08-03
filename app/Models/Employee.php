@@ -43,7 +43,7 @@ class Employee extends Model
     ];
 
     protected $fillable = [
-        'employee_code', 'first_name', 'middle_name', 'last_name', 'display_name',
+        'employee_code', 'biometric_enroll_id', 'first_name', 'middle_name', 'last_name', 'display_name',
         'dob', 'gender', 'marital_status', 'blood_group',
         'personal_mobile', 'alternate_mobile', 'personal_email', 'official_email', 'profile_photo_path',
         'current_address', 'permanent_address', 'city', 'state', 'country', 'pincode',

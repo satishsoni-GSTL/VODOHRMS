@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\Reports\AttendanceMonthlySummaryExport;
 use App\Exports\Reports\AttendanceReportExport;
 use App\Exports\Reports\EmployeeMasterExport;
 use App\Exports\Reports\ExpenseReportExport;
@@ -19,6 +20,7 @@ class ReportDownloadController extends Controller
     private const PERMISSIONS = [
         'employee' => 'employee.export',
         'attendance' => 'attendance.view',
+        'attendance_monthly_summary' => 'attendance.view',
         'leave' => 'leave.view',
         'expense' => 'expense.view',
         'payroll' => 'payroll.view',
@@ -26,7 +28,7 @@ class ReportDownloadController extends Controller
         'payroll_expense_fy' => 'payroll.view',
     ];
 
-    private const TEAM_SCOPED_TYPES = ['attendance', 'leave', 'expense', 'loan'];
+    private const TEAM_SCOPED_TYPES = ['attendance', 'attendance_monthly_summary', 'leave', 'expense', 'loan'];
 
     public function __invoke(Request $request, string $type): BinaryFileResponse
     {
@@ -42,6 +44,7 @@ class ReportDownloadController extends Controller
         [$export, $filename] = match ($type) {
             'employee' => [new EmployeeMasterExport, 'employee-master-report.xlsx'],
             'attendance' => [new AttendanceReportExport($month, $user), "attendance-report-{$month}.xlsx"],
+            'attendance_monthly_summary' => [new AttendanceMonthlySummaryExport($month, $user), "attendance-monthly-summary-{$month}.xlsx"],
             'leave' => [new LeaveReportExport($month, $user), "leave-report-{$month}.xlsx"],
             'expense' => [new ExpenseReportExport($month, $user), "expense-report-{$month}.xlsx"],
             'payroll' => [new PayrollReportExport($month), "payroll-report-{$month}.xlsx"],

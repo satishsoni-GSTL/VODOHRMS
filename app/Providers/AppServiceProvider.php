@@ -4,11 +4,13 @@ namespace App\Providers;
 
 use App\Models\Attendance;
 use App\Models\AuditLog;
+use App\Models\BiometricDevice;
 use App\Models\Branch;
 use App\Models\Company;
 use App\Models\CostCenter;
 use App\Models\Department;
 use App\Models\Designation;
+use App\Models\DevicePunchLog;
 use App\Models\Employee;
 use App\Models\EmployeeAsset;
 use App\Models\EmployeeLeaveBalance;
@@ -82,7 +84,7 @@ class AppServiceProvider extends ServiceProvider
             Gate::policy($model, OrganizationPolicy::class);
         }
 
-        foreach ([Shift::class, Holiday::class, Attendance::class] as $model) {
+        foreach ([Shift::class, Holiday::class, Attendance::class, BiometricDevice::class, DevicePunchLog::class] as $model) {
             Gate::policy($model, AttendanceMasterPolicy::class);
         }
 

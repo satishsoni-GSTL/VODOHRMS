@@ -4,8 +4,12 @@ namespace App\Filament\Resources\EmployeeResource\Pages;
 
 use App\Filament\Resources\EmployeeResource;
 use App\Models\User;
+use App\Notifications\PasswordResetByAdminNotification;
 use App\Notifications\WelcomeAccountNotification;
+use App\Services\AuditLogService;
 use Filament\Actions;
+use Filament\Forms;
+use Filament\Forms\Get;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Str;
@@ -55,6 +59,67 @@ class EditEmployee extends EditRecord
                     Notification::make()
                         ->title('Login created')
                         ->body("Welcome email with temporary credentials sent to {$email}.")
+                        ->success()
+                        ->send();
+                }),
+            Actions\Action::make('resetPassword')
+                ->label('Reset Password')
+                ->icon('heroicon-o-lock-closed')
+                ->color('gray')
+                ->visible(fn () => auth()->user()?->can('users.manage') && $this->record->user()->exists())
+                ->form([
+                    Forms\Components\Radio::make('mode')
+                        ->label('New password')
+                        ->options([
+                            'auto' => 'Auto-generate a password',
+                            'manual' => 'Set a specific password',
+                        ])
+                        ->default('auto')
+                        ->live()
+                        ->required(),
+                    Forms\Components\TextInput::make('new_password')
+                        ->label('New password')
+                        ->password()
+                        ->revealable()
+                        ->minLength(8)
+                        ->required(fn (Get $get) => $get('mode') === 'manual')
+                        ->visible(fn (Get $get) => $get('mode') === 'manual'),
+                    Forms\Components\Toggle::make('must_change_password')
+                        ->label('Require password change on next login')
+                        ->default(true),
+                ])
+                ->action(function (array $data) {
+                    $user = $this->record->user;
+
+                    if (! $user) {
+                        Notification::make()
+                            ->title('No login found')
+                            ->body('This employee does not have a login to reset.')
+                            ->danger()
+                            ->send();
+
+                        return;
+                    }
+
+                    $plainPassword = $data['mode'] === 'auto' ? Str::password(14) : $data['new_password'];
+
+                    $user->update([
+                        'password' => $plainPassword,
+                        'must_change_password' => $data['must_change_password'],
+                    ]);
+
+                    $user->notify(new PasswordResetByAdminNotification($user, $plainPassword));
+
+                    app(AuditLogService::class)->log(
+                        'password_reset',
+                        $user,
+                        newValues: ['must_change_password' => $data['must_change_password']],
+                        module: 'User',
+                    );
+
+                    Notification::make()
+                        ->title('Password reset')
+                        ->body("New password emailed to {$user->email}.")
                         ->success()
                         ->send();
                 }),

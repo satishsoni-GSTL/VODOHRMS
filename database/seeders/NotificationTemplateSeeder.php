@@ -63,6 +63,12 @@ class NotificationTemplateSeeder extends Seeder
             'placeholders_help' => 'Available: {name}, {employee_code}, {email}, {temp_password}',
         ],
         [
+            'key' => 'password_reset',
+            'subject' => 'Your VODOHRMS password has been reset',
+            'body' => "Hi {name}, your password on VODOHRMS was reset by an administrator.\nEmployee code: {employee_code}\nEmail: {email}\nNew password: {new_password}\nYou may be required to change this password on your next login.",
+            'placeholders_help' => 'Available: {name}, {employee_code}, {email}, {new_password}',
+        ],
+        [
             'key' => 'exit_clearance_assigned',
             'subject' => 'Exit clearance needed: {department} — {employee_name}',
             'body' => "{employee_name} ({employee_code}) has resigned and requires {department} clearance.\nLast working date: {last_working_date}",

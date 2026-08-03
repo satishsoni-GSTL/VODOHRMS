@@ -1,0 +1,33 @@
+2026-08-03 11:46:41,109 [INFO] Connecting to device at 192.168.1.201:4370 ...
+2026-08-03 11:46:55,470 [ERROR] Sync run failed
+Traceback (most recent call last):
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 248, in __send_command
+    self.__sock.send(top)
+    ~~~~~~~~~~~~~~~~^^^^^
+TimeoutError: timed out
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 147, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 113, in main
+    records = fetch_new_punches(config, since)
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 79, in fetch_new_punches
+    conn = zk.connect()
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 373, in connect
+    cmd_response = self.__send_command(const.CMD_CONNECT)
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 260, in __send_command
+    raise ZKNetworkError(str(e))
+zk.exception.ZKNetworkError: timed out
+2026-08-03 11:47:36,439 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-08-03 11:47:37,035 [INFO] Found 1385 new punch(es). Pushing to cloud in batches of 200.
+2026-08-03 11:47:40,688 [INFO] Batch 0-200: {'matched': 0, 'unmatched': 200, 'duplicate': 0, 'failed': 0}
+2026-08-03 11:47:43,185 [INFO] Batch 200-400: {'matched': 0, 'unmatched': 200, 'duplicate': 0, 'failed': 0}
+2026-08-03 11:47:45,659 [INFO] Batch 400-600: {'matched': 0, 'unmatched': 200, 'duplicate': 0, 'failed': 0}
+2026-08-03 11:47:48,318 [INFO] Batch 600-800: {'matched': 0, 'unmatched': 200, 'duplicate': 0, 'failed': 0}
+2026-08-03 11:47:50,594 [INFO] Batch 800-1000: {'matched': 0, 'unmatched': 200, 'duplicate': 0, 'failed': 0}
+2026-08-03 11:47:52,816 [INFO] Batch 1000-1200: {'matched': 0, 'unmatched': 200, 'duplicate': 0, 'failed': 0}
+2026-08-03 11:47:54,926 [INFO] Batch 1200-1385: {'matched': 0, 'unmatched': 185, 'duplicate': 0, 'failed': 0}
+2026-08-03 11:47:54,927 [INFO] Sync complete. Cursor advanced to 2026-08-03 11:33:56.
