@@ -31,3 +31,38 @@ zk.exception.ZKNetworkError: timed out
 2026-08-03 11:47:52,816 [INFO] Batch 1000-1200: {'matched': 0, 'unmatched': 200, 'duplicate': 0, 'failed': 0}
 2026-08-03 11:47:54,926 [INFO] Batch 1200-1385: {'matched': 0, 'unmatched': 185, 'duplicate': 0, 'failed': 0}
 2026-08-03 11:47:54,927 [INFO] Sync complete. Cursor advanced to 2026-08-03 11:33:56.
+2026-08-03 13:01:30,517 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-08-03 13:01:31,070 [INFO] Found 1 new punch(es). Pushing to cloud in batches of 200.
+2026-08-03 13:01:31,351 [INFO] Batch 0-1: {'matched': 1, 'unmatched': 0, 'duplicate': 0, 'failed': 0}
+2026-08-03 13:01:31,352 [INFO] Sync complete. Cursor advanced to 2026-08-03 11:45:08.
+2026-08-03 13:02:35,289 [ERROR] Sync run failed
+Traceback (most recent call last):
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 147, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 110, in main
+    since = load_cursor()
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 63, in load_cursor
+    data = json.load(f)
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\json\__init__.py", line 293, in load
+    return loads(fp.read(),
+        cls=cls, object_hook=object_hook,
+        parse_float=parse_float, parse_int=parse_int,
+        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\json\__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\json\decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\json\decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+2026-08-03 13:02:58,421 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-08-03 13:02:59,053 [INFO] Found 933 new punch(es). Pushing to cloud in batches of 200.
+2026-08-03 13:02:59,959 [INFO] Batch 0-200: {'matched': 181, 'unmatched': 19, 'duplicate': 0, 'failed': 0}
+2026-08-03 13:03:00,727 [INFO] Batch 200-400: {'matched': 182, 'unmatched': 18, 'duplicate': 0, 'failed': 0}
+2026-08-03 13:03:01,570 [INFO] Batch 400-600: {'matched': 196, 'unmatched': 4, 'duplicate': 0, 'failed': 0}
+2026-08-03 13:03:02,840 [INFO] Batch 600-800: {'matched': 196, 'unmatched': 4, 'duplicate': 0, 'failed': 0}
+2026-08-03 13:03:03,750 [INFO] Batch 800-933: {'matched': 126, 'unmatched': 6, 'duplicate': 1, 'failed': 0}
+2026-08-03 13:03:03,752 [INFO] Sync complete. Cursor advanced to 2026-08-03 11:45:08.

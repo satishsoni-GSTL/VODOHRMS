@@ -7,7 +7,9 @@ use App\Services\ApprovalWorkflowService;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Tables\Actions\Action;
+use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\HtmlString;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -21,6 +23,8 @@ trait HasApprovalActions
         $canAct = fn (Model $record) => $record->approval_instance_id
             && app(ApprovalWorkflowService::class)->canUserActOnInstance($record->approvalInstance, auth()->user());
 
+        $modalContent = fn (Model $record) => static::approvalModalContent($record) ?? new HtmlString('');
+
         return [
             Action::make('approve')
                 ->label('Approve')
@@ -28,6 +32,7 @@ trait HasApprovalActions
                 ->color('success')
                 ->visible($canAct)
                 ->requiresConfirmation()
+                ->modalContent($modalContent)
                 ->action(function (Model $record) {
                     static::actOnRecord($record, ApprovalAction::ACTION_APPROVE);
                 }),
@@ -36,6 +41,7 @@ trait HasApprovalActions
                 ->icon('heroicon-o-x-circle')
                 ->color('danger')
                 ->visible($canAct)
+                ->modalContent($modalContent)
                 ->form([Textarea::make('remarks')->required()->label('Reason for rejection')])
                 ->action(function (Model $record, array $data) {
                     static::actOnRecord($record, ApprovalAction::ACTION_REJECT, $data['remarks']);
@@ -45,11 +51,22 @@ trait HasApprovalActions
                 ->icon('heroicon-o-arrow-uturn-left')
                 ->color('warning')
                 ->visible($canAct)
+                ->modalContent($modalContent)
                 ->form([Textarea::make('remarks')->required()->label('What needs to change')])
                 ->action(function (Model $record, array $data) {
                     static::actOnRecord($record, ApprovalAction::ACTION_SEND_BACK, $data['remarks']);
                 }),
         ];
+    }
+
+    /**
+     * Optional extra content rendered above the confirmation/remarks form in the approve/
+     * reject/send-back modals, so approvers aren't acting blind. Override in a resource to
+     * surface entity-specific detail (e.g. expense line items and receipts); default is none.
+     */
+    protected static function approvalModalContent(Model $record): ?View
+    {
+        return null;
     }
 
     private static function actOnRecord(Model $record, string $action, ?string $remarks = null): void

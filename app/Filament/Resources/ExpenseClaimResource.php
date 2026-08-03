@@ -14,7 +14,9 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Contracts\View\View as ViewContract;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class ExpenseClaimResource extends Resource
 {
@@ -121,6 +123,17 @@ class ExpenseClaimResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return ScopesToOwnTeam::apply(parent::getEloquentQuery(), auth()->user(), 'expense.view');
+    }
+
+    protected static function approvalModalContent(Model $record): ?ViewContract
+    {
+        if (! $record instanceof ExpenseClaim) {
+            return null;
+        }
+
+        return view('filament.expense-claims.approval-details', [
+            'claim' => $record->loadMissing('lines.category'),
+        ]);
     }
 
     public static function getPages(): array

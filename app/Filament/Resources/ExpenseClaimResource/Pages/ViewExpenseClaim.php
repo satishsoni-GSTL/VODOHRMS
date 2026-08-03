@@ -29,6 +29,12 @@ class ViewExpenseClaim extends ViewRecord
                     TextEntry::make('requested_amount')->money('INR'),
                     TextEntry::make('approved_amount')->money('INR'),
                     TextEntry::make('vendor'),
+                    TextEntry::make('receipt_path')
+                        ->label('Receipt')
+                        ->formatStateUsing(fn (?string $state) => $state ? 'Download Receipt' : 'No receipt')
+                        ->url(fn ($record) => $record->receipt_path ? route('expense-receipts.download', $record) : null)
+                        ->openUrlInNewTab()
+                        ->color(fn (?string $state) => $state ? 'primary' : 'gray'),
                     TextEntry::make('description')->columnSpanFull(),
                 ])
                 ->columns(3)
