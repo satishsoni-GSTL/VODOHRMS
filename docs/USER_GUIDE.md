@@ -56,7 +56,7 @@ Else
 
 So a Manager and an Employee both land on the exact same menu item (e.g. "Leave Applications") — the list is just pre-filtered. There's no hidden "My Leave" page; what you see under "Leave" *is* your view of it.
 
-The two genuine exceptions with their own dedicated ESS pages are **My Salary Slips** and **My Tax Comparison** (see §5) — those are single-employee views by nature (a payslip is inherently "yours"), so they're separate pages rather than a scoped list.
+The genuine exceptions with their own dedicated ESS pages are **My Salary Slips**, **My Tax Comparison**, and **My Form 16** (see §5) — those are single-employee views by nature (a payslip is inherently "yours"), so they're separate pages rather than a scoped list.
 
 ---
 
@@ -108,7 +108,11 @@ Payroll
 Income Tax
   Financial Years · Tax Slabs · Regime Configuration
   Employee Regime · Investment Declarations       [tax.verify to approve/reject proofs]
+  Employee Regime table has a Fix/Lock and Unlock row action [tax.manage] — once fixed,
+  the employee can no longer self-change their regime for that financial year
+  Generate Form 16                                [tax.manage — per-employee or bulk]
   My Tax Comparison                              ← ESS page, old-vs-new regime, everyone's own
+  My Form 16                                     ← ESS page, download own Form 16 PDF
 
 Exit Management                                 [resignation.manage / exit.manage / fnf.process]
   Resignations
@@ -140,7 +144,7 @@ Logging in as someone with the **Employee** role (no HR/Payroll/Finance permissi
 - **Expenses / Expense Claims** — their own claims; can submit a new one.
 - **Loans & Advances** — their own loan/advance requests; can request one.
 - **My Salary Slips** — download their own payslips (PDF).
-- **Income Tax / Employee Regime, Investment Declarations, My Tax Comparison** — select regime, declare investments with proof upload, compare old vs. new regime tax.
+- **Income Tax / Employee Regime, Investment Declarations, My Tax Comparison, My Form 16** — select regime (until HR fixes/locks it for the year), declare investments with proof upload, compare old vs. new regime tax, download their own Form 16 once HR has generated it.
 - Everything under Organization, Onboarding (management side), Payroll processing, Exit Management, Roles & Permissions, Reports — **hidden or empty**, since none of those actions apply to a self-scoped, no-permission user.
 
 ## 6. Manager view — what's added on top of Employee
@@ -210,6 +214,9 @@ Employee: **Loans & Advances → New** → chain **Employee → Reporting Manage
 | Approve something waiting on me | **Pending Approvals** (works across every module) |
 | See/download my payslip | **Payroll → My Salary Slips** |
 | Compare old vs new tax regime | **Income Tax → My Tax Comparison** |
+| Download my Form 16 | **Income Tax → My Form 16** |
+| Generate Form 16 for employees | **Income Tax → Generate Form 16** [tax.manage] |
+| Fix/lock (or unlock) an employee's tax regime | **Income Tax → Employee Regime** → Fix / Lock or Unlock row action [tax.manage] |
 | Add a new joiner | **Employees → New Employee** (or Bulk Upload from the list) |
 | Check onboarding progress for a new hire | **Onboarding → Onboarding Checklists** |
 | Run this month's payroll | **Payroll → Payroll Runs → New** |
@@ -220,4 +227,4 @@ Employee: **Loans & Advances → New** → chain **Employee → Reporting Manage
 
 ---
 
-*This guide reflects the application as built and verified on 2026-07-24 (all 6 phases + Reports + Audit Log). If a later change adds a Roles/Permissions UI, dedicated manager exit-clearance screen, or other items flagged as gaps above, update this file alongside `ARCHITECTURE.md`'s Implementation Status section rather than letting the two drift apart.*
+*This guide reflects the application as built and verified on 2026-08-10 (all 7 phases + Reports + Audit Log). If a later change adds a Roles/Permissions UI, dedicated manager exit-clearance screen, or other items flagged as gaps above, update this file alongside `ARCHITECTURE.md`'s Implementation Status section rather than letting the two drift apart.*

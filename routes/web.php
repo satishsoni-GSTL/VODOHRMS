@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ExpenseReceiptDownloadController;
+use App\Http\Controllers\Form16DownloadController;
 use App\Http\Controllers\MyPayrollDownloadController;
 use App\Http\Controllers\PayslipDownloadController;
 use App\Http\Controllers\PolicyDocumentDownloadController;
@@ -33,3 +34,7 @@ Route::get('/policy-documents/{policyDocument}/download', PolicyDocumentDownload
 Route::get('/expense-receipts/{expenseClaimLine}/download', ExpenseReceiptDownloadController::class)
     ->middleware('auth')
     ->name('expense-receipts.download');
+
+Route::get('/form16/{form16}/download', Form16DownloadController::class)
+    ->middleware('auth')
+    ->name('form16.download');

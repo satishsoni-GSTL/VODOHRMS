@@ -66,3 +66,7 @@ json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
 2026-08-03 13:03:02,840 [INFO] Batch 600-800: {'matched': 196, 'unmatched': 4, 'duplicate': 0, 'failed': 0}
 2026-08-03 13:03:03,750 [INFO] Batch 800-933: {'matched': 126, 'unmatched': 6, 'duplicate': 1, 'failed': 0}
 2026-08-03 13:03:03,752 [INFO] Sync complete. Cursor advanced to 2026-08-03 11:45:08.
+2026-08-04 10:59:57,453 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-08-04 10:59:58,204 [INFO] Found 39 new punch(es). Pushing to cloud in batches of 200.
+2026-08-04 10:59:58,672 [INFO] Batch 0-39: {'matched': 39, 'unmatched': 0, 'duplicate': 0, 'failed': 0}
+2026-08-04 10:59:58,673 [INFO] Sync complete. Cursor advanced to 2026-08-04 10:42:08.

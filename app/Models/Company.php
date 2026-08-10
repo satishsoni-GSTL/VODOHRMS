@@ -11,7 +11,7 @@ class Company extends Model
 {
     use HasActiveScope, SoftDeletes;
 
-    protected $fillable = ['name', 'code', 'address', 'gstin', 'pan', 'logo_path', 'is_active'];
+    protected $fillable = ['name', 'code', 'address', 'gstin', 'pan', 'tan', 'logo_path', 'is_active'];
 
     protected function casts(): array
     {

@@ -6,8 +6,10 @@ use App\Filament\Concerns\ScopesToOwnTeam;
 use App\Filament\Resources\EmployeeTaxRegimeResource\Pages;
 use App\Models\EmployeeTaxRegime;
 use App\Models\TaxRegimeSlab;
+use App\Services\TaxRegimeSelectionService;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -56,11 +58,37 @@ class EmployeeTaxRegimeResource extends Resource
                 Tables\Columns\TextColumn::make('financialYear.name')->label('FY'),
                 Tables\Columns\TextColumn::make('selected_regime')->badge(),
                 Tables\Columns\TextColumn::make('selection_date')->date(),
+                Tables\Columns\IconColumn::make('locked')
+                    ->label('Fixed by Admin')
+                    ->boolean()
+                    ->getStateUsing(fn (EmployeeTaxRegime $record) => app(TaxRegimeSelectionService::class)->isLocked($record)),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('financial_year_id')->relationship('financialYear', 'name')->label('Financial Year'),
             ])
-            ->actions([])
+            ->actions([
+                Tables\Actions\Action::make('lock')
+                    ->label('Fix / Lock')
+                    ->icon('heroicon-o-lock-closed')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalDescription('The employee will no longer be able to change their own regime for this financial year unless HR reopens the change window or unlocks it.')
+                    ->visible(fn (EmployeeTaxRegime $record) => auth()->user()->can('tax.manage') && ! $record->lock_date)
+                    ->action(function (EmployeeTaxRegime $record) {
+                        app(TaxRegimeSelectionService::class)->lock($record);
+                        Notification::make()->title('Regime fixed and locked')->success()->send();
+                    }),
+                Tables\Actions\Action::make('unlock')
+                    ->label('Unlock')
+                    ->icon('heroicon-o-lock-open')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->visible(fn (EmployeeTaxRegime $record) => auth()->user()->can('tax.manage') && (bool) $record->lock_date)
+                    ->action(function (EmployeeTaxRegime $record) {
+                        app(TaxRegimeSelectionService::class)->unlock($record);
+                        Notification::make()->title('Regime unlocked')->success()->send();
+                    }),
+            ])
             ->bulkActions([]);
     }
 

@@ -39,6 +39,10 @@ class CompanyResource extends Resource
                     ->maxLength(20),
                 Forms\Components\TextInput::make('pan')
                     ->maxLength(20),
+                Forms\Components\TextInput::make('tan')
+                    ->label('TAN')
+                    ->helperText('Tax Deduction Account Number — printed on Form 16.')
+                    ->maxLength(20),
                 Forms\Components\FileUpload::make('logo_path')
                     ->image()
                     ->directory('company-logos'),

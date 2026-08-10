@@ -224,7 +224,11 @@ class Employee extends Model
     {
         return $this->taxRegimes()
             ->where('financial_year_id', $financialYear->id)
+            // Tie-break by id when two selections land on the same date (e.g. HR fixes a
+            // regime the same day the employee first picked one) — selection_date alone
+            // doesn't disambiguate which row is actually the latest.
             ->orderByDesc('selection_date')
+            ->orderByDesc('id')
             ->value('selected_regime');
     }
 
