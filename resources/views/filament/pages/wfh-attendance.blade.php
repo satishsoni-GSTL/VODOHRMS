@@ -20,7 +20,7 @@
                 </div>
                 <div class="text-sm">
                     <span class="text-gray-500 dark:text-gray-400">Out Time:</span>
-                    <span class="font-medium">{{ $today->last_out ?? '—' }}</span>
+                    <span class="font-medium">{{ $today->display_last_out ?? '—' }}</span>
                 </div>
                 <div class="text-sm">
                     <span class="text-gray-500 dark:text-gray-400">Hours So Far:</span>

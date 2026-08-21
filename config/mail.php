@@ -75,6 +75,19 @@ return [
             'channel' => env('MAIL_LOG_CHANNEL'),
         ],
 
+        // Sends every email via Microsoft Graph's sendMail API (app-only OAuth2) as the one
+        // mailbox in MS_GRAPH_SENDER, instead of SMTP. Set MAIL_MAILER=graph to use it once
+        // the four MS_GRAPH_* values below are filled in (an Azure AD app registration with
+        // Graph *application* permission Mail.Send, admin-consented) — see
+        // App\Mail\Transport\MicrosoftGraphTransport.
+        'graph' => [
+            'transport' => 'graph',
+            'tenant_id' => env('MS_GRAPH_TENANT_ID'),
+            'client_id' => env('MS_GRAPH_CLIENT_ID'),
+            'client_secret' => env('MS_GRAPH_CLIENT_SECRET'),
+            'sender' => env('MS_GRAPH_SENDER'),
+        ],
+
         'array' => [
             'transport' => 'array',
         ],

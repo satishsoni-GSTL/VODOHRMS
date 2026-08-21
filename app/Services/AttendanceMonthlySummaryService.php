@@ -126,7 +126,7 @@ class AttendanceMonthlySummaryService
 
         $hours = $attendance->effective_hours ?? $attendance->total_hours;
 
-        if ($attendance->first_in && $attendance->last_out) {
+        if ($attendance->hasDistinctPunches()) {
             return [
                 'code' => $statusCode,
                 'label' => "{$statusCode} {$attendance->first_in}-{$attendance->last_out}",

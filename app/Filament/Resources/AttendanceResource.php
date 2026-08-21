@@ -55,7 +55,8 @@ class AttendanceResource extends Resource
                 Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(),
                 Tables\Columns\TextColumn::make('attendance_date')->date()->sortable(),
                 Tables\Columns\TextColumn::make('first_in')->time('H:i'),
-                Tables\Columns\TextColumn::make('last_out')->time('H:i'),
+                Tables\Columns\TextColumn::make('last_out')->label('Last Out')->time('H:i')->placeholder('—')
+                    ->state(fn (Attendance $record) => $record->display_last_out),
                 Tables\Columns\TextColumn::make('effective_hours')->label('Hours'),
                 Tables\Columns\TextColumn::make('late_minutes')->label('Late (min)')->toggleable(),
                 Tables\Columns\TextColumn::make('status')

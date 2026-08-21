@@ -11,6 +11,12 @@ use Carbon\CarbonInterface;
 
 class AttendanceService
 {
+    /**
+     * The industry-standard full working day, used as a fallback wherever a "complete vs
+     * incomplete work hours" call has to be made for an employee with no shift assigned.
+     */
+    public const DEFAULT_FULL_DAY_HOURS = 8.0;
+
     public function activeShiftForEmployee(Employee $employee, CarbonInterface $date): ?Shift
     {
         $employeeShift = $employee->employeeShifts()
@@ -20,6 +26,18 @@ class AttendanceService
             ->first();
 
         return $employeeShift?->shift;
+    }
+
+    /**
+     * The full-day-hours threshold to color/badge "complete" vs "incomplete" work hours
+     * against — the employee's assigned shift's min_full_day_hours if one exists, otherwise
+     * the standard 8-hour day.
+     */
+    public function minFullDayHoursFor(Employee $employee, CarbonInterface $date): float
+    {
+        $shift = $this->activeShiftForEmployee($employee, $date);
+
+        return $shift ? (float) $shift->min_full_day_hours : self::DEFAULT_FULL_DAY_HOURS;
     }
 
     public function recalculate(Attendance $attendance): void

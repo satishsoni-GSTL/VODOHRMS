@@ -32,6 +32,9 @@
             <span class="inline-flex items-center gap-1"><span class="h-3 w-3 rounded" style="{{ $this->cellStyle('H') }}"></span> Holiday</span>
             <span class="inline-flex items-center gap-1"><span class="h-3 w-3 rounded" style="{{ $this->cellStyle('WO') }}"></span> Weekly Off</span>
             <span class="inline-flex items-center gap-1"><span class="h-3 w-3 rounded" style="{{ $this->cellStyle('A') }}"></span> Absent</span>
+            <span class="ml-2 text-gray-500 dark:text-gray-400">Hours:</span>
+            <span class="inline-flex items-center gap-1"><span class="h-3 w-3 rounded" style="{{ $this->cellStyle('P') }}"></span> 8h+ Complete</span>
+            <span class="inline-flex items-center gap-1"><span class="h-3 w-3 rounded" style="{{ $this->cellStyle('A') }}"></span> Incomplete</span>
         </div>
     </div>
 
@@ -58,7 +61,9 @@
                                     <div class="min-w-[3rem] leading-tight">
                                         <div>{{ \Illuminate\Support\Str::of($cell['first_in'])->limit(5, '') }}</div>
                                         <div>{{ $cell['last_out'] ? \Illuminate\Support\Str::of($cell['last_out'])->limit(5, '') : '—' }}</div>
-                                        <div class="font-medium">{{ $cell['hours'] !== null ? number_format($cell['hours'], 2).'h' : '—' }}</div>
+                                        <div class="mt-0.5 inline-block rounded px-1 font-medium" style="{{ $this->hoursStyle($cell['hours'], $row['min_full_day_hours']) }}">
+                                            {{ $cell['hours'] !== null ? number_format($cell['hours'], 2).'h' : '—' }}
+                                        </div>
                                     </div>
                                 @elseif ($cell['label'] !== '')
                                     <span title="{{ $cell['label'] }}" class="inline-flex min-w-[2.25rem] items-center justify-center rounded px-1.5 py-0.5 font-medium">{{ $cell['code'] }}</span>

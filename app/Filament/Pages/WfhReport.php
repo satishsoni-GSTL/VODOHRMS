@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Filament\Concerns\ScopesToOwnTeam;
 use App\Models\Attendance;
 use App\Services\AttendanceService;
+use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Pages\Page;
 use Filament\Tables;
@@ -42,6 +43,18 @@ class WfhReport extends Page implements HasTable
         return $user->can('attendance.view') || ($user->employee?->directReports()->exists() ?? false);
     }
 
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('export')
+                ->label('Export to Excel')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('gray')
+                ->url(route('reports.download', ['type' => 'wfh', 'month' => now()->format('Y-m')]))
+                ->openUrlInNewTab(),
+        ];
+    }
+
     public function table(Table $table): Table
     {
         return $table
@@ -55,8 +68,21 @@ class WfhReport extends Page implements HasTable
                 Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(),
                 Tables\Columns\TextColumn::make('attendance_date')->label('Date')->date()->sortable(),
                 Tables\Columns\TextColumn::make('first_in')->label('In Time')->time('H:i')->placeholder('—'),
-                Tables\Columns\TextColumn::make('last_out')->label('Out Time')->time('H:i')->placeholder('—'),
-                Tables\Columns\TextColumn::make('effective_hours')->label('Hours Completed')->placeholder('—'),
+                Tables\Columns\TextColumn::make('last_out')->label('Out Time')->time('H:i')->placeholder('—')
+                    ->state(fn (Attendance $record) => $record->display_last_out),
+                Tables\Columns\TextColumn::make('effective_hours')
+                    ->label('Hours Completed')
+                    ->placeholder('—')
+                    ->badge()
+                    ->color(function (Attendance $record) {
+                        if ($record->effective_hours === null) {
+                            return 'gray';
+                        }
+
+                        $minFullDayHours = app(AttendanceService::class)->minFullDayHoursFor($record->employee, $record->attendance_date);
+
+                        return (float) $record->effective_hours >= $minFullDayHours ? 'success' : 'danger';
+                    }),
                 Tables\Columns\TextColumn::make('late_minutes')
                     ->label('Late Mark')
                     ->badge()
@@ -66,10 +92,9 @@ class WfhReport extends Page implements HasTable
                     ->label('Work Hours Status')
                     ->badge()
                     ->state(function (Attendance $record) {
-                        $shift = app(AttendanceService::class)->activeShiftForEmployee($record->employee, $record->attendance_date);
-                        $minFullDayHours = $shift ? (float) $shift->min_full_day_hours : null;
+                        $minFullDayHours = app(AttendanceService::class)->minFullDayHoursFor($record->employee, $record->attendance_date);
 
-                        return $minFullDayHours !== null && (float) ($record->effective_hours ?? 0) >= $minFullDayHours
+                        return (float) ($record->effective_hours ?? 0) >= $minFullDayHours
                             ? 'Completed'
                             : 'Incomplete';
                     })

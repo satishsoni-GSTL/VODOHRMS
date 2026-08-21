@@ -60,4 +60,25 @@ class Attendance extends Model
     {
         return $this->hasMany(AttendancePunch::class);
     }
+
+    /**
+     * False when there's only one real punch for the day (first_in and last_out end up
+     * identical because AttendanceService/BiometricPunchService seed both from the same
+     * single punch when the other is still null) — i.e. whenever displaying "in time" and
+     * "out time" side by side would just show the same value twice. Callers should treat
+     * that as a missing out-punch and not render last_out at all.
+     */
+    public function hasDistinctPunches(): bool
+    {
+        return $this->first_in && $this->last_out && $this->first_in !== $this->last_out;
+    }
+
+    /**
+     * Display-safe out time: null when there's no real second punch (see hasDistinctPunches),
+     * so callers can render "—" instead of duplicating the in time.
+     */
+    public function getDisplayLastOutAttribute(): ?string
+    {
+        return $this->hasDistinctPunches() ? $this->last_out : null;
+    }
 }

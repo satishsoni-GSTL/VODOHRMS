@@ -35,7 +35,7 @@ class AttendanceReportExport implements FromCollection, WithHeadings
             $attendance->attendance_date->toDateString(),
             Attendance::STATUSES[$attendance->status] ?? $attendance->status,
             $attendance->first_in,
-            $attendance->last_out,
+            $attendance->display_last_out,
             $attendance->total_hours,
             $attendance->late_minutes,
         ]);

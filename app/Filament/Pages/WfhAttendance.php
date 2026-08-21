@@ -90,17 +90,16 @@ class WfhAttendance extends Page
             ->orderByDesc('attendance_date')
             ->get()
             ->map(function (Attendance $attendance) use ($attendanceService) {
-                $shift = $attendanceService->activeShiftForEmployee($attendance->employee, $attendance->attendance_date);
-                $minFullDayHours = $shift ? (float) $shift->min_full_day_hours : null;
+                $minFullDayHours = $attendanceService->minFullDayHoursFor($attendance->employee, $attendance->attendance_date);
 
                 return [
                     'date' => $attendance->attendance_date->toDateString(),
                     'first_in' => $attendance->first_in,
-                    'last_out' => $attendance->last_out,
+                    'last_out' => $attendance->display_last_out,
                     'effective_hours' => $attendance->effective_hours,
                     'late_minutes' => $attendance->late_minutes,
                     'late_mark' => $attendance->late_minutes > 0,
-                    'completed' => $minFullDayHours !== null && (float) ($attendance->effective_hours ?? 0) >= $minFullDayHours,
+                    'completed' => (float) ($attendance->effective_hours ?? 0) >= $minFullDayHours,
                 ];
             });
     }

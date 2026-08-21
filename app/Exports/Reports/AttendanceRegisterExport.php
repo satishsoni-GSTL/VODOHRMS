@@ -5,6 +5,7 @@ namespace App\Exports\Reports;
 use App\Models\Employee;
 use App\Models\User;
 use App\Services\AttendanceMonthlySummaryService;
+use App\Services\AttendanceService;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -23,6 +24,15 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 class AttendanceRegisterExport implements FromArray, WithEvents, WithHeadings
 {
     private Carbon $monthStart;
+
+    /**
+     * [employeeCode => [dayNumber => 'complete'|'incomplete']] for every punch cell, built
+     * while array() runs so registerEvents()'s AfterSheet coloring pass (which only sees raw
+     * cell text) knows which cells to highlight without having to re-derive it from the text.
+     *
+     * @var array<string, array<int, string>>
+     */
+    private array $completion = [];
 
     public function __construct(private readonly string $month, private readonly User $user) {}
 
@@ -44,24 +54,35 @@ class AttendanceRegisterExport implements FromArray, WithEvents, WithHeadings
         $monthEnd = (clone $this->monthStart)->endOfMonth();
 
         $summaryService = app(AttendanceMonthlySummaryService::class);
+        $attendanceService = app(AttendanceService::class);
 
-        return $this->employees()->map(function (Employee $employee) use ($summaryService, $monthEnd) {
+        return $this->employees()->map(function (Employee $employee) use ($summaryService, $attendanceService, $monthEnd) {
             $days = $summaryService->buildForEmployee($employee, $this->monthStart, $monthEnd);
+            $minFullDayHours = $attendanceService->minFullDayHoursFor($employee, $this->monthStart);
 
-            return [
-                $employee->employee_code,
-                $employee->full_name,
-                ...array_map(fn (array $cell) => $this->cellText($cell), array_values($days)),
-            ];
+            $dayNumber = 0;
+            $cells = array_map(function (array $cell) use (&$dayNumber, $employee, $minFullDayHours) {
+                $dayNumber++;
+
+                if ($cell['hours'] !== null) {
+                    $this->completion[$employee->employee_code][$dayNumber] =
+                        $cell['hours'] >= $minFullDayHours ? 'complete' : 'incomplete';
+                }
+
+                return $this->cellText($cell);
+            }, array_values($days));
+
+            return [$employee->employee_code, $employee->full_name, ...$cells];
         })->all();
     }
 
     private function cellText(array $cell): string
     {
         if ($cell['first_in']) {
+            $lastOut = $cell['last_out'] ?? '—';
             $hours = $cell['hours'] !== null ? number_format($cell['hours'], 2).'h' : '—';
 
-            return "{$cell['first_in']}\n{$cell['last_out']}\n{$hours}";
+            return "{$cell['first_in']}\n{$lastOut}\n{$hours}";
         }
 
         return $cell['label'];
@@ -98,6 +119,8 @@ class AttendanceRegisterExport implements FromArray, WithEvents, WithHeadings
                 for ($row = 2; $row <= $lastRow; $row++) {
                     $sheet->getRowDimension($row)->setRowHeight(40);
 
+                    $employeeCode = (string) $sheet->getCell("A{$row}")->getValue();
+
                     for ($col = $firstDayColumn; $col <= $lastDayColumn; $col++) {
                         $coordinate = Coordinate::stringFromColumnIndex($col).$row;
                         $value = (string) $sheet->getCell($coordinate)->getValue();
@@ -106,7 +129,19 @@ class AttendanceRegisterExport implements FromArray, WithEvents, WithHeadings
                             continue;
                         }
 
-                        $code = strtok($value, "\n ");
+                        $day = $col - $firstDayColumn + 1;
+                        $completionState = $this->completion[$employeeCode][$day] ?? null;
+
+                        if ($completionState !== null) {
+                            // Punch cell: highlight the whole cell by hours complete/incomplete,
+                            // reusing the same Present/Absent palette the status-code cells use.
+                            $code = $completionState === 'complete'
+                                ? AttendanceMonthlySummaryService::CODE_PRESENT
+                                : AttendanceMonthlySummaryService::CODE_ABSENT;
+                        } else {
+                            $code = strtok($value, "\n ");
+                        }
+
                         $colors = AttendanceMonthlySummaryService::CODE_COLORS[$code] ?? null;
 
                         if (! $colors) {

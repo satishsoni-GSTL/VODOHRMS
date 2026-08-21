@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Mail\Transport\MicrosoftGraphTransport;
 use App\Models\Attendance;
 use App\Models\AuditLog;
 use App\Models\BiometricDevice;
@@ -55,6 +56,7 @@ use Illuminate\Notifications\Events\NotificationSending;
 use Illuminate\Notifications\Events\NotificationSent;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -116,6 +118,23 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(NotificationLog::class, NotificationLogPolicy::class);
 
         $this->registerNotificationLogging();
+        $this->registerMicrosoftGraphMailTransport();
+    }
+
+    /**
+     * Registers the 'graph' mail transport (config/mail.php's `mailers.graph`) so
+     * MAIL_MAILER=graph sends every email through Microsoft Graph's sendMail API instead of
+     * SMTP. Purely additive — the app keeps using whatever MAIL_MAILER is actually set until
+     * this is switched over.
+     */
+    private function registerMicrosoftGraphMailTransport(): void
+    {
+        Mail::extend('graph', fn (array $config) => new MicrosoftGraphTransport(
+            $config['tenant_id'],
+            $config['client_id'],
+            $config['client_secret'],
+            $config['sender'],
+        ));
     }
 
     private function registerNotificationLogging(): void

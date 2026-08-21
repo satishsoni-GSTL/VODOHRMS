@@ -4,7 +4,9 @@ namespace App\Filament\Pages;
 
 use App\Models\Employee;
 use App\Services\AttendanceMonthlySummaryService;
+use App\Services\AttendanceService;
 use Carbon\Carbon;
+use Filament\Actions\Action;
 use Filament\Pages\Page;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Livewire\WithPagination;
@@ -47,6 +49,18 @@ class AttendanceRegister extends Page
         return $user->can('attendance.view') || ($user->employee?->directReports()->exists() ?? false);
     }
 
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('export')
+                ->label('Export to Excel')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('gray')
+                ->url(fn () => route('reports.download', ['type' => 'attendance_register', 'month' => $this->month ?: now()->format('Y-m')]))
+                ->openUrlInNewTab(),
+        ];
+    }
+
     public function updatedMonth(): void
     {
         $this->resetPage();
@@ -76,7 +90,7 @@ class AttendanceRegister extends Page
     }
 
     /**
-     * @return LengthAwarePaginator<int, array{employee: Employee, days: array}>
+     * @return LengthAwarePaginator<int, array{employee: Employee, days: array, min_full_day_hours: float}>
      */
     public function rows(): LengthAwarePaginator
     {
@@ -97,12 +111,16 @@ class AttendanceRegister extends Page
         }
 
         $summaryService = app(AttendanceMonthlySummaryService::class);
+        $attendanceService = app(AttendanceService::class);
         $monthStart = $this->monthStart();
         $monthEnd = $this->monthEnd();
 
         return $query->paginate(15)->through(fn (Employee $employee) => [
             'employee' => $employee,
             'days' => $summaryService->buildForEmployee($employee, $monthStart, $monthEnd),
+            // One shift lookup per employee (not per day) — an employee's shift essentially
+            // never changes mid-month, so this is an acceptable approximation for coloring.
+            'min_full_day_hours' => $attendanceService->minFullDayHoursFor($employee, $monthStart),
         ]);
     }
 
@@ -111,5 +129,21 @@ class AttendanceRegister extends Page
         $colors = AttendanceMonthlySummaryService::CODE_COLORS[$code] ?? null;
 
         return $colors ? "background-color:{$colors['bg']};color:{$colors['text']};" : '';
+    }
+
+    /**
+     * Green when the day's hours meet the full-day threshold, red when they fall short —
+     * reuses the exact same palette as the status-code badges (Present/Absent) so the whole
+     * page reads with one consistent color language.
+     */
+    public function hoursStyle(?float $hours, float $minFullDayHours): string
+    {
+        if ($hours === null) {
+            return '';
+        }
+
+        $code = $hours >= $minFullDayHours ? AttendanceMonthlySummaryService::CODE_PRESENT : AttendanceMonthlySummaryService::CODE_ABSENT;
+
+        return $this->cellStyle($code);
     }
 }

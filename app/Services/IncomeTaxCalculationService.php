@@ -6,6 +6,7 @@ use App\Models\Employee;
 use App\Models\EmployeeTaxDeclaration;
 use App\Models\EmployeeTaxProjection;
 use App\Models\FinancialYear;
+use App\Models\FullFinalSettlement;
 use App\Models\PayrollRunEmployee;
 use App\Models\PayrollRunEmployeeLine;
 use App\Models\TaxRegimeConfig;
@@ -117,7 +118,35 @@ class IncomeTaxCalculationService
         $remainingMonths = count(array_filter($fyMonths, fn ($m) => $m > $payrollMonth));
         $currentMonthlyGross = (float) ($employee->currentSalaryStructure()?->monthly_gross ?? 0);
 
-        return round($paidSoFar + ($remainingMonths * $currentMonthlyGross), 2);
+        return round($paidSoFar + $this->fnfTaxableEarnings($employee, $financialYear) + ($remainingMonths * $currentMonthlyGross), 2);
+    }
+
+    /**
+     * Taxable salary paid through an employee's Full & Final settlement instead of a normal
+     * payroll run — pending (part-month/notice-period) salary, bonus, and other earnings.
+     * These never appear in payroll_run_employees, so without this a resigned employee's
+     * Form 16 / tax projection would silently exclude everything they were actually paid at
+     * exit and reflect only what was formally run through monthly payroll ("based on
+     * credit") rather than what they actually earned ("based on salary").
+     *
+     * Only PAID settlements count — draft/calculated/approved figures can still change.
+     * Deliberately excludes `leave_encashment` and `reimbursement`: leave encashment has its
+     * own partial tax-exemption rules (Section 10(10AA)) this codebase doesn't model, and
+     * reimbursement is an expense repayment, not income — including either here without that
+     * exemption logic would overstate tax. Known simplification; see docs/ARCHITECTURE.md.
+     */
+    private function fnfTaxableEarnings(Employee $employee, FinancialYear $financialYear): float
+    {
+        return (float) FullFinalSettlement::query()
+            ->where('employee_id', $employee->id)
+            ->where('status', FullFinalSettlement::STATUS_PAID)
+            ->whereHas('resignation', fn ($q) => $q
+                ->whereNotNull('approved_last_working_date')
+                ->whereBetween('approved_last_working_date', [$financialYear->start_date, $financialYear->end_date]))
+            ->get()
+            ->sum(fn (FullFinalSettlement $settlement) => (float) $settlement->pending_salary
+                + (float) $settlement->bonus_incentive
+                + (float) $settlement->other_earnings);
     }
 
     private function tdsDeductedTillDate(Employee $employee, FinancialYear $financialYear, string $payrollMonth): float
@@ -131,10 +160,27 @@ class IncomeTaxCalculationService
             })
             ->pluck('id');
 
-        return (float) PayrollRunEmployeeLine::query()
+        $payrollTds = (float) PayrollRunEmployeeLine::query()
             ->whereIn('payroll_run_employee_id', $runEmployeeIds)
             ->where('label', self::TDS_LABEL)
             ->sum('amount');
+
+        return $payrollTds + $this->fnfTdsDeducted($employee, $financialYear);
+    }
+
+    /**
+     * TDS entered on a PAID Full & Final settlement — mirrors fnfTaxableEarnings() above so
+     * the income added there and the tax already withheld against it both count together.
+     */
+    private function fnfTdsDeducted(Employee $employee, FinancialYear $financialYear): float
+    {
+        return (float) FullFinalSettlement::query()
+            ->where('employee_id', $employee->id)
+            ->where('status', FullFinalSettlement::STATUS_PAID)
+            ->whereHas('resignation', fn ($q) => $q
+                ->whereNotNull('approved_last_working_date')
+                ->whereBetween('approved_last_working_date', [$financialYear->start_date, $financialYear->end_date]))
+            ->sum('tds');
     }
 
     public function project(Employee $employee, FinancialYear $financialYear, string $payrollMonth, string $regime): EmployeeTaxProjection
