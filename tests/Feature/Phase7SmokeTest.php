@@ -22,6 +22,7 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class Phase7SmokeTest extends TestCase
@@ -199,5 +200,27 @@ class Phase7SmokeTest extends TestCase
         $this->actingAs($otherEmployee, 'web')
             ->get(route('form16.download', $form16))
             ->assertStatus(403);
+    }
+
+    /**
+     * Regression test: `full_name` is a PHP accessor (Employee::getFullNameAttribute()), not
+     * a real employees column. The Generate Form16 page's employee table used to pass that
+     * column name straight to ->searchable() with no explicit column list, so Filament tried
+     * to search it as a raw SQL column and crashed with
+     * "SQLSTATE[42S22]: Column not found: 1054 Unknown column 'full_name'" the first time
+     * anyone typed into the search box. Fixed by ->searchable(['first_name', 'last_name']).
+     */
+    public function test_generate_form16_employee_search_does_not_crash_on_the_full_name_column(): void
+    {
+        $company = Company::firstOrCreate(['code' => 'HO'], ['name' => 'Head Office', 'pan' => 'AAACH1234A', 'tan' => 'DELH12345A', 'is_active' => true]);
+        $tax = $this->makeUser('TAX730', 'Super Admin', $company);
+        $this->makeUser('SAT730', 'Employee', $company); // first_name defaults to the employee_code in makeUser()
+
+        $this->actingAs($tax, 'web');
+
+        Livewire::test(\App\Filament\Pages\GenerateForm16::class)
+            ->set('tableSearch', 'SAT730')
+            ->assertSuccessful()
+            ->assertSee('SAT730');
     }
 }

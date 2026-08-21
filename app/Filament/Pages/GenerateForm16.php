@@ -69,7 +69,7 @@ class GenerateForm16 extends Page implements HasTable
             ->query(fn () => Employee::query()->where('status', Employee::STATUS_ACTIVE)->orderBy('employee_code'))
             ->columns([
                 Tables\Columns\TextColumn::make('employee_code')->label('Code')->searchable(),
-                Tables\Columns\TextColumn::make('full_name')->label('Employee')->searchable(),
+                Tables\Columns\TextColumn::make('full_name')->label('Employee')->searchable(['first_name', 'last_name']),
                 Tables\Columns\TextColumn::make('regime')
                     ->label('Regime')
                     ->badge()
