@@ -18,7 +18,7 @@ class BiometricDeviceResource extends Resource
 
     protected static ?string $navigationGroup = 'Attendance';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 10;
 
     public static function form(Form $form): Form
     {

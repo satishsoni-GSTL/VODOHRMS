@@ -32,12 +32,32 @@ class AttendanceMonthlySummaryService
     private const DEFAULT_WEEKLY_OFF = ['saturday', 'sunday'];
 
     /**
+     * Inline hex bg/text colors per status code, shared by every screen/export that renders
+     * this service's cells (Monthly Attendance View, Attendance Register, and their matching
+     * Excel exports) so the palette stays visually consistent across all of them.
+     */
+    public const CODE_COLORS = [
+        self::CODE_PRESENT => ['bg' => '#C6EFCE', 'text' => '#006100'],
+        self::CODE_HALF_DAY => ['bg' => '#FFEB9C', 'text' => '#9C6500'],
+        self::CODE_WFH => ['bg' => '#DDEBF7', 'text' => '#1F4E78'],
+        self::CODE_ON_DUTY => ['bg' => '#DDEBF7', 'text' => '#1F4E78'],
+        self::CODE_LEAVE => ['bg' => '#E4DFEC', 'text' => '#60497A'],
+        self::CODE_HOLIDAY => ['bg' => '#D9D9D9', 'text' => '#404040'],
+        self::CODE_WEEKLY_OFF => ['bg' => '#F2F2F2', 'text' => '#808080'],
+        self::CODE_ABSENT => ['bg' => '#FFC7CE', 'text' => '#9C0006'],
+        self::CODE_MISSING_PUNCH => ['bg' => '#FCE4D6', 'text' => '#833C00'],
+    ];
+
+    /**
      * Build one cell per calendar day for the given employee/month: a short status
      * code plus a display label (code, and in/out times when punches exist).
      * Priority per day: an actual attendance record (from punches) wins if present;
      * otherwise holiday, then approved leave, then weekly off, then absent/blank.
+     * Also carries the raw first_in/last_out/hours (null when there's no punch data)
+     * for consumers that render them directly instead of just the code/label, e.g.
+     * the Attendance Register matrix.
      *
-     * @return array<string, array{code: string, label: string}> keyed by Y-m-d
+     * @return array<string, array{code: string, label: string, first_in: ?string, last_out: ?string, hours: ?float}> keyed by Y-m-d
      */
     public function buildForEmployee(Employee $employee, CarbonInterface $monthStart, CarbonInterface $monthEnd): array
     {
@@ -78,11 +98,11 @@ class AttendanceMonthlySummaryService
 
             $days[$dateString] = match (true) {
                 $attendance !== null => $this->cellForAttendance($attendance),
-                array_key_exists($dateString, $leaveDates) => ['code' => self::CODE_LEAVE, 'label' => self::CODE_LEAVE],
-                in_array($dateString, $holidays, true) => ['code' => self::CODE_HOLIDAY, 'label' => self::CODE_HOLIDAY],
-                in_array(strtolower($date->format('l')), $weeklyOff->all(), true) => ['code' => self::CODE_WEEKLY_OFF, 'label' => self::CODE_WEEKLY_OFF],
-                $date->greaterThan($today) => ['code' => '', 'label' => ''],
-                default => ['code' => self::CODE_ABSENT, 'label' => self::CODE_ABSENT],
+                array_key_exists($dateString, $leaveDates) => $this->plainCell(self::CODE_LEAVE),
+                in_array($dateString, $holidays, true) => $this->plainCell(self::CODE_HOLIDAY),
+                in_array(strtolower($date->format('l')), $weeklyOff->all(), true) => $this->plainCell(self::CODE_WEEKLY_OFF),
+                $date->greaterThan($today) => $this->plainCell(''),
+                default => $this->plainCell(self::CODE_ABSENT),
             };
         }
 
@@ -90,7 +110,7 @@ class AttendanceMonthlySummaryService
     }
 
     /**
-     * @return array{code: string, label: string}
+     * @return array{code: string, label: string, first_in: ?string, last_out: ?string, hours: ?float}
      */
     private function cellForAttendance(Attendance $attendance): array
     {
@@ -104,18 +124,34 @@ class AttendanceMonthlySummaryService
             default => self::CODE_PRESENT,
         };
 
+        $hours = $attendance->effective_hours ?? $attendance->total_hours;
+
         if ($attendance->first_in && $attendance->last_out) {
-            return ['code' => $statusCode, 'label' => "{$statusCode} {$attendance->first_in}-{$attendance->last_out}"];
+            return [
+                'code' => $statusCode,
+                'label' => "{$statusCode} {$attendance->first_in}-{$attendance->last_out}",
+                'first_in' => $attendance->first_in,
+                'last_out' => $attendance->last_out,
+                'hours' => $hours !== null ? (float) $hours : null,
+            ];
         }
 
         if ($attendance->first_in) {
-            return ['code' => self::CODE_MISSING_PUNCH, 'label' => "IN {$attendance->first_in}"];
+            return ['code' => self::CODE_MISSING_PUNCH, 'label' => "IN {$attendance->first_in}", 'first_in' => $attendance->first_in, 'last_out' => null, 'hours' => null];
         }
 
         if ($attendance->last_out) {
-            return ['code' => self::CODE_MISSING_PUNCH, 'label' => "OUT {$attendance->last_out}"];
+            return ['code' => self::CODE_MISSING_PUNCH, 'label' => "OUT {$attendance->last_out}", 'first_in' => null, 'last_out' => $attendance->last_out, 'hours' => null];
         }
 
-        return ['code' => $statusCode, 'label' => $statusCode];
+        return $this->plainCell($statusCode);
+    }
+
+    /**
+     * @return array{code: string, label: string, first_in: null, last_out: null, hours: null}
+     */
+    private function plainCell(string $code): array
+    {
+        return ['code' => $code, 'label' => $code, 'first_in' => null, 'last_out' => null, 'hours' => null];
     }
 }

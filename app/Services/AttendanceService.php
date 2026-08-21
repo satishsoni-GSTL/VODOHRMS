@@ -58,9 +58,18 @@ class AttendanceService
             $minFullDayMinutes = (float) $shift->min_full_day_hours * 60;
             $minHalfDayMinutes = (float) $shift->min_half_day_hours * 60;
 
-            if ($effectiveMinutes >= $minFullDayMinutes) {
+            // Only let the generic present/half-day state machine drive the status when it's
+            // already in that state (or unset). Statuses set by a dedicated flow — Work From
+            // Home, On Duty, Leave, Holiday, Weekly Off — carry their own meaning and must not
+            // be silently overwritten just because punches were recorded/recalculated; late
+            // marks and incomplete-hours are still computed above regardless of status.
+            $statusIsGeneric = in_array($attendance->status, [
+                Attendance::STATUS_PRESENT, Attendance::STATUS_HALF_DAY, Attendance::STATUS_MISSING_PUNCH,
+            ], true);
+
+            if ($statusIsGeneric && $effectiveMinutes >= $minFullDayMinutes) {
                 $attendance->status = Attendance::STATUS_PRESENT;
-            } elseif ($effectiveMinutes >= $minHalfDayMinutes) {
+            } elseif ($statusIsGeneric && $effectiveMinutes >= $minHalfDayMinutes) {
                 $attendance->status = Attendance::STATUS_HALF_DAY;
             }
         }

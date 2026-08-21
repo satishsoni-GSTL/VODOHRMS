@@ -18,7 +18,7 @@ class DevicePunchLogResource extends Resource
 
     protected static ?string $navigationGroup = 'Attendance';
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 11;
 
     public static function table(Table $table): Table
     {

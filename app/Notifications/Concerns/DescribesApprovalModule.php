@@ -14,6 +14,7 @@ trait DescribesApprovalModule
             WorkflowDefinition::MODULE_EXPENSE => 'Expense Claim',
             WorkflowDefinition::MODULE_LOAN => 'Loan/Advance',
             WorkflowDefinition::MODULE_RESIGNATION => 'Resignation',
+            WorkflowDefinition::MODULE_WORK_FROM_HOME => 'Work From Home',
             default => ucwords(str_replace('_', ' ', $module)),
         };
     }
@@ -26,6 +27,7 @@ trait DescribesApprovalModule
             WorkflowDefinition::MODULE_EXPENSE => '/admin/expense-claims',
             WorkflowDefinition::MODULE_LOAN => '/admin/employee-loans',
             WorkflowDefinition::MODULE_RESIGNATION => '/admin/resignations',
+            WorkflowDefinition::MODULE_WORK_FROM_HOME => '/admin/work-from-home-requests',
             default => '/admin',
         };
     }

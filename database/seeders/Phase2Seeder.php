@@ -29,6 +29,14 @@ class Phase2Seeder extends Seeder
             ]
         );
 
+        $this->seedWorkflow(
+            WorkflowDefinition::MODULE_WORK_FROM_HOME,
+            'Work From Home Approval',
+            [
+                ['approver_type' => WorkflowLevel::APPROVER_REPORTING_MANAGER],
+            ]
+        );
+
         Shift::firstOrCreate(
             ['name' => 'General Shift'],
             [

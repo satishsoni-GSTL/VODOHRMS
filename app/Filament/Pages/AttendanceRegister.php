@@ -9,19 +9,27 @@ use Filament\Pages\Page;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Livewire\WithPagination;
 
-class AttendanceMonthlyView extends Page
+/**
+ * Monthly attendance register: employees down the Y axis, day-of-month across the X axis,
+ * each cell showing the first punch, last punch, and work hours for that day (or a short
+ * status code — WO/H/L/A — on days with no punches). Covers all attendance, not just Work
+ * From Home; see App\Filament\Pages\WfhReport for the WFH-only equivalent. Complements the
+ * existing Monthly Attendance View, which shows only a compact color-coded status per day —
+ * this page is the detailed punch/hours register for the same underlying data.
+ */
+class AttendanceRegister extends Page
 {
     use WithPagination;
 
-    protected static ?string $navigationIcon = 'heroicon-o-table-cells';
+    protected static ?string $navigationIcon = 'heroicon-o-clock';
+
+    protected static ?string $navigationLabel = 'Attendance Register';
 
     protected static ?string $navigationGroup = 'Attendance';
 
-    protected static ?string $navigationLabel = 'Monthly Attendance View';
+    protected static ?int $navigationSort = 4;
 
-    protected static ?int $navigationSort = 5;
-
-    protected static string $view = 'filament.pages.attendance-monthly-view';
+    protected static string $view = 'filament.pages.attendance-register';
 
     public string $month = '';
 
@@ -68,7 +76,7 @@ class AttendanceMonthlyView extends Page
     }
 
     /**
-     * @return LengthAwarePaginator<int, array{employee: Employee, days: array, totals: array<string, int>}>
+     * @return LengthAwarePaginator<int, array{employee: Employee, days: array}>
      */
     public function rows(): LengthAwarePaginator
     {
@@ -92,23 +100,10 @@ class AttendanceMonthlyView extends Page
         $monthStart = $this->monthStart();
         $monthEnd = $this->monthEnd();
 
-        return $query->paginate(20)->through(function (Employee $employee) use ($summaryService, $monthStart, $monthEnd) {
-            $days = $summaryService->buildForEmployee($employee, $monthStart, $monthEnd);
-            $counts = array_count_values(array_column($days, 'code'));
-
-            return [
-                'employee' => $employee,
-                'days' => $days,
-                'totals' => [
-                    'P' => $counts[AttendanceMonthlySummaryService::CODE_PRESENT] ?? 0,
-                    'HD' => $counts[AttendanceMonthlySummaryService::CODE_HALF_DAY] ?? 0,
-                    'L' => $counts[AttendanceMonthlySummaryService::CODE_LEAVE] ?? 0,
-                    'H' => $counts[AttendanceMonthlySummaryService::CODE_HOLIDAY] ?? 0,
-                    'WO' => $counts[AttendanceMonthlySummaryService::CODE_WEEKLY_OFF] ?? 0,
-                    'A' => $counts[AttendanceMonthlySummaryService::CODE_ABSENT] ?? 0,
-                ],
-            ];
-        });
+        return $query->paginate(15)->through(fn (Employee $employee) => [
+            'employee' => $employee,
+            'days' => $summaryService->buildForEmployee($employee, $monthStart, $monthEnd),
+        ]);
     }
 
     public function cellStyle(string $code): string

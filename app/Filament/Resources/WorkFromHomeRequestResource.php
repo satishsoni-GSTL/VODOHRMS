@@ -4,8 +4,8 @@ namespace App\Filament\Resources;
 
 use App\Filament\Concerns\HasApprovalActions;
 use App\Filament\Concerns\ScopesToOwnTeam;
-use App\Filament\Resources\AttendanceRegularizationResource\Pages;
-use App\Models\AttendanceRegularization;
+use App\Filament\Resources\WorkFromHomeRequestResource\Pages;
+use App\Models\WorkFromHomeRequest;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -13,17 +13,19 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
-class AttendanceRegularizationResource extends Resource
+class WorkFromHomeRequestResource extends Resource
 {
     use HasApprovalActions;
 
-    protected static ?string $model = AttendanceRegularization::class;
+    protected static ?string $model = WorkFromHomeRequest::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
+    protected static ?string $navigationIcon = 'heroicon-o-home';
+
+    protected static ?string $navigationLabel = 'Work From Home';
 
     protected static ?string $navigationGroup = 'Attendance';
 
-    protected static ?int $navigationSort = 6;
+    protected static ?int $navigationSort = 7;
 
     public static function form(Form $form): Form
     {
@@ -38,12 +40,11 @@ class AttendanceRegularizationResource extends Resource
                     ->default(fn () => auth()->user()->employee_id)
                     ->disabled(fn () => ! auth()->user()->can('attendance.manage'))
                     ->dehydrated(),
-                Forms\Components\DatePicker::make('attendance_date')->required(),
-                Forms\Components\Select::make('request_type')->options(AttendanceRegularization::TYPES)->required(),
-                Forms\Components\TimePicker::make('requested_values.first_in')->label('Corrected Check-In')->seconds(false),
-                Forms\Components\TimePicker::make('requested_values.last_out')->label('Corrected Check-Out')->seconds(false),
+                Forms\Components\DatePicker::make('from_date')->required()->live()->minDate(now()->startOfDay()),
+                Forms\Components\DatePicker::make('to_date')->required()
+                    ->afterOrEqual('from_date')
+                    ->minDate(fn (Forms\Get $get) => $get('from_date') ?: now()->startOfDay()),
                 Forms\Components\Textarea::make('reason')->required()->columnSpanFull(),
-                Forms\Components\FileUpload::make('attachment_path')->directory('regularization-attachments'),
             ])
             ->columns(2);
     }
@@ -54,28 +55,23 @@ class AttendanceRegularizationResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('employee.employee_code')->label('Code')->searchable(),
                 Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(),
-                Tables\Columns\TextColumn::make('attendance_date')->date()->sortable(),
-                Tables\Columns\TextColumn::make('request_type')->formatStateUsing(fn (string $state) => AttendanceRegularization::TYPES[$state] ?? $state),
+                Tables\Columns\TextColumn::make('from_date')->date()->sortable(),
+                Tables\Columns\TextColumn::make('to_date')->date()->sortable(),
+                Tables\Columns\TextColumn::make('total_days')->label('Working Days')->state(fn (WorkFromHomeRequest $record) => $record->total_days),
                 Tables\Columns\TextColumn::make('reason')->limit(40),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
+                    ->formatStateUsing(fn (string $state) => WorkFromHomeRequest::STATUSES[$state] ?? $state)
                     ->color(fn (string $state) => match ($state) {
-                        AttendanceRegularization::STATUS_APPROVED => 'success',
-                        AttendanceRegularization::STATUS_REJECTED => 'danger',
-                        AttendanceRegularization::STATUS_SENT_BACK => 'warning',
+                        WorkFromHomeRequest::STATUS_APPROVED => 'success',
+                        WorkFromHomeRequest::STATUS_REJECTED => 'danger',
+                        WorkFromHomeRequest::STATUS_SENT_BACK => 'warning',
                         default => 'gray',
                     }),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
-                Tables\Filters\SelectFilter::make('status')->options([
-                    AttendanceRegularization::STATUS_PENDING => 'Pending',
-                    AttendanceRegularization::STATUS_MANAGER_APPROVED => 'Manager Approved',
-                    AttendanceRegularization::STATUS_HR_APPROVED => 'HR Approved',
-                    AttendanceRegularization::STATUS_APPROVED => 'Approved',
-                    AttendanceRegularization::STATUS_REJECTED => 'Rejected',
-                    AttendanceRegularization::STATUS_SENT_BACK => 'Sent Back',
-                ]),
+                Tables\Filters\SelectFilter::make('status')->options(WorkFromHomeRequest::STATUSES),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
@@ -92,9 +88,9 @@ class AttendanceRegularizationResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListAttendanceRegularizations::route('/'),
-            'create' => Pages\CreateAttendanceRegularization::route('/create'),
-            'view' => Pages\ViewAttendanceRegularization::route('/{record}'),
+            'index' => Pages\ListWorkFromHomeRequests::route('/'),
+            'create' => Pages\CreateWorkFromHomeRequest::route('/create'),
+            'view' => Pages\ViewWorkFromHomeRequest::route('/{record}'),
         ];
     }
 }

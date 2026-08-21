@@ -70,3 +70,356 @@ json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
 2026-08-04 10:59:58,204 [INFO] Found 39 new punch(es). Pushing to cloud in batches of 200.
 2026-08-04 10:59:58,672 [INFO] Batch 0-39: {'matched': 39, 'unmatched': 0, 'duplicate': 0, 'failed': 0}
 2026-08-04 10:59:58,673 [INFO] Sync complete. Cursor advanced to 2026-08-04 10:42:08.
+2026-08-10 12:16:05,495 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-08-10 12:16:38,572 [ERROR] Sync run failed
+Traceback (most recent call last):
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 248, in __send_command
+    self.__sock.send(top)
+    ~~~~~~~~~~~~~~~~^^^^^
+TimeoutError: timed out
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 147, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 113, in main
+    records = fetch_new_punches(config, since)
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 79, in fetch_new_punches
+    conn = zk.connect()
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 373, in connect
+    cmd_response = self.__send_command(const.CMD_CONNECT)
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 260, in __send_command
+    raise ZKNetworkError(str(e))
+zk.exception.ZKNetworkError: timed out
+2026-08-10 12:18:17,805 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-08-10 12:18:50,574 [ERROR] Sync run failed
+Traceback (most recent call last):
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 248, in __send_command
+    self.__sock.send(top)
+    ~~~~~~~~~~~~~~~~^^^^^
+TimeoutError: timed out
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 147, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 113, in main
+    records = fetch_new_punches(config, since)
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 79, in fetch_new_punches
+    conn = zk.connect()
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 373, in connect
+    cmd_response = self.__send_command(const.CMD_CONNECT)
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 260, in __send_command
+    raise ZKNetworkError(str(e))
+zk.exception.ZKNetworkError: timed out
+2026-08-10 12:19:33,471 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-08-10 12:20:06,566 [ERROR] Sync run failed
+Traceback (most recent call last):
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 248, in __send_command
+    self.__sock.send(top)
+    ~~~~~~~~~~~~~~~~^^^^^
+TimeoutError: timed out
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 147, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 113, in main
+    records = fetch_new_punches(config, since)
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 79, in fetch_new_punches
+    conn = zk.connect()
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 373, in connect
+    cmd_response = self.__send_command(const.CMD_CONNECT)
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 260, in __send_command
+    raise ZKNetworkError(str(e))
+zk.exception.ZKNetworkError: timed out
+2026-08-10 12:22:16,097 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-08-10 12:22:37,756 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-08-10 12:23:10,575 [ERROR] Sync run failed
+Traceback (most recent call last):
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 248, in __send_command
+    self.__sock.send(top)
+    ~~~~~~~~~~~~~~~~^^^^^
+TimeoutError: timed out
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 147, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 113, in main
+    records = fetch_new_punches(config, since)
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 79, in fetch_new_punches
+    conn = zk.connect()
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 373, in connect
+    cmd_response = self.__send_command(const.CMD_CONNECT)
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 260, in __send_command
+    raise ZKNetworkError(str(e))
+zk.exception.ZKNetworkError: timed out
+2026-08-10 12:25:02,480 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-08-10 12:25:34,069 [ERROR] Sync run failed
+Traceback (most recent call last):
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 248, in __send_command
+    self.__sock.send(top)
+    ~~~~~~~~~~~~~~~~^^^^^
+TimeoutError: timed out
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 147, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 113, in main
+    records = fetch_new_punches(config, since)
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 79, in fetch_new_punches
+    conn = zk.connect()
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 373, in connect
+    cmd_response = self.__send_command(const.CMD_CONNECT)
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 260, in __send_command
+    raise ZKNetworkError(str(e))
+zk.exception.ZKNetworkError: timed out
+2026-08-10 12:30:58,798 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-08-10 12:31:30,555 [ERROR] Sync run failed
+Traceback (most recent call last):
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 248, in __send_command
+    self.__sock.send(top)
+    ~~~~~~~~~~~~~~~~^^^^^
+TimeoutError: timed out
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 147, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 113, in main
+    records = fetch_new_punches(config, since)
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 79, in fetch_new_punches
+    conn = zk.connect()
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 373, in connect
+    cmd_response = self.__send_command(const.CMD_CONNECT)
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 260, in __send_command
+    raise ZKNetworkError(str(e))
+zk.exception.ZKNetworkError: timed out
+2026-08-10 12:32:09,627 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-08-10 12:32:45,056 [ERROR] Sync run failed
+Traceback (most recent call last):
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 248, in __send_command
+    self.__sock.send(top)
+    ~~~~~~~~~~~~~~~~^^^^^
+TimeoutError: timed out
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 147, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 113, in main
+    records = fetch_new_punches(config, since)
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 79, in fetch_new_punches
+    conn = zk.connect()
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 373, in connect
+    cmd_response = self.__send_command(const.CMD_CONNECT)
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 260, in __send_command
+    raise ZKNetworkError(str(e))
+zk.exception.ZKNetworkError: timed out
+2026-08-13 16:30:37,049 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-08-13 16:31:09,913 [ERROR] Sync run failed
+Traceback (most recent call last):
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 248, in __send_command
+    self.__sock.send(top)
+    ~~~~~~~~~~~~~~~~^^^^^
+TimeoutError: timed out
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 147, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 113, in main
+    records = fetch_new_punches(config, since)
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 79, in fetch_new_punches
+    conn = zk.connect()
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 373, in connect
+    cmd_response = self.__send_command(const.CMD_CONNECT)
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 260, in __send_command
+    raise ZKNetworkError(str(e))
+zk.exception.ZKNetworkError: timed out
+2026-08-13 16:31:32,149 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-08-13 16:32:07,929 [ERROR] Sync run failed
+Traceback (most recent call last):
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 248, in __send_command
+    self.__sock.send(top)
+    ~~~~~~~~~~~~~~~~^^^^^
+TimeoutError: timed out
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 147, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 113, in main
+    records = fetch_new_punches(config, since)
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 79, in fetch_new_punches
+    conn = zk.connect()
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 373, in connect
+    cmd_response = self.__send_command(const.CMD_CONNECT)
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 260, in __send_command
+    raise ZKNetworkError(str(e))
+zk.exception.ZKNetworkError: timed out
+2026-08-13 16:33:51,538 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-08-13 16:34:10,164 [ERROR] Sync run failed
+Traceback (most recent call last):
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 248, in __send_command
+    self.__sock.send(top)
+    ~~~~~~~~~~~~~~~~^^^^^
+TimeoutError: timed out
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 147, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 113, in main
+    records = fetch_new_punches(config, since)
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 79, in fetch_new_punches
+    conn = zk.connect()
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 373, in connect
+    cmd_response = self.__send_command(const.CMD_CONNECT)
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 260, in __send_command
+    raise ZKNetworkError(str(e))
+zk.exception.ZKNetworkError: timed out
+2026-08-13 16:34:12,565 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-08-13 16:34:52,428 [ERROR] Sync run failed
+Traceback (most recent call last):
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 248, in __send_command
+    self.__sock.send(top)
+    ~~~~~~~~~~~~~~~~^^^^^
+TimeoutError: timed out
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 147, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 113, in main
+    records = fetch_new_punches(config, since)
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 79, in fetch_new_punches
+    conn = zk.connect()
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 373, in connect
+    cmd_response = self.__send_command(const.CMD_CONNECT)
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 260, in __send_command
+    raise ZKNetworkError(str(e))
+zk.exception.ZKNetworkError: timed out
+2026-08-13 16:36:24,477 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-08-13 16:36:55,926 [ERROR] Sync run failed
+Traceback (most recent call last):
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 248, in __send_command
+    self.__sock.send(top)
+    ~~~~~~~~~~~~~~~~^^^^^
+TimeoutError: timed out
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 147, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 113, in main
+    records = fetch_new_punches(config, since)
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 79, in fetch_new_punches
+    conn = zk.connect()
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 373, in connect
+    cmd_response = self.__send_command(const.CMD_CONNECT)
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 260, in __send_command
+    raise ZKNetworkError(str(e))
+zk.exception.ZKNetworkError: timed out
+2026-08-13 16:44:12,682 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-08-13 16:44:43,967 [ERROR] Sync run failed
+Traceback (most recent call last):
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 248, in __send_command
+    self.__sock.send(top)
+    ~~~~~~~~~~~~~~~~^^^^^
+TimeoutError: timed out
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 147, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 113, in main
+    records = fetch_new_punches(config, since)
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 79, in fetch_new_punches
+    conn = zk.connect()
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 373, in connect
+    cmd_response = self.__send_command(const.CMD_CONNECT)
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 260, in __send_command
+    raise ZKNetworkError(str(e))
+zk.exception.ZKNetworkError: timed out
+2026-08-13 16:52:07,183 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-08-13 16:52:39,976 [ERROR] Sync run failed
+Traceback (most recent call last):
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 248, in __send_command
+    self.__sock.send(top)
+    ~~~~~~~~~~~~~~~~^^^^^
+TimeoutError: timed out
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 147, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 113, in main
+    records = fetch_new_punches(config, since)
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 79, in fetch_new_punches
+    conn = zk.connect()
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 373, in connect
+    cmd_response = self.__send_command(const.CMD_CONNECT)
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 260, in __send_command
+    raise ZKNetworkError(str(e))
+zk.exception.ZKNetworkError: timed out
+2026-08-17 14:34:57,684 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-08-17 14:35:30,955 [ERROR] Sync run failed
+Traceback (most recent call last):
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 248, in __send_command
+    self.__sock.send(top)
+    ~~~~~~~~~~~~~~~~^^^^^
+TimeoutError: timed out
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 147, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 113, in main
+    records = fetch_new_punches(config, since)
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 79, in fetch_new_punches
+    conn = zk.connect()
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 373, in connect
+    cmd_response = self.__send_command(const.CMD_CONNECT)
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 260, in __send_command
+    raise ZKNetworkError(str(e))
+zk.exception.ZKNetworkError: timed out
+2026-08-20 19:00:59,921 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-08-20 19:01:00,564 [INFO] Found 603 new punch(es). Pushing to cloud in batches of 200.
+2026-08-20 19:01:03,393 [INFO] Batch 0-200: {'matched': 200, 'unmatched': 0, 'duplicate': 0, 'failed': 0}
+2026-08-20 19:01:04,480 [INFO] Batch 200-400: {'matched': 194, 'unmatched': 6, 'duplicate': 0, 'failed': 0}
+2026-08-20 19:01:05,647 [INFO] Batch 400-600: {'matched': 185, 'unmatched': 15, 'duplicate': 0, 'failed': 0}
+2026-08-20 19:01:05,789 [INFO] Batch 600-603: {'matched': 3, 'unmatched': 0, 'duplicate': 0, 'failed': 0}
+2026-08-20 19:01:05,791 [INFO] Sync complete. Cursor advanced to 2026-08-20 18:45:57.

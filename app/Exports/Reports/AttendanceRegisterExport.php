@@ -11,29 +11,20 @@ use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 
-class AttendanceMonthlySummaryExport implements FromArray, WithEvents, WithHeadings
+/**
+ * Excel counterpart of the on-screen Attendance Register: employees as rows, one column
+ * per calendar day, each cell holding first punch / last punch / work hours stacked on
+ * three lines (wrapped text). No-punch days (leave/holiday/weekly-off/absent) fall back to
+ * the short status code, same as AttendanceMonthlySummaryExport.
+ */
+class AttendanceRegisterExport implements FromArray, WithEvents, WithHeadings
 {
     private Carbon $monthStart;
 
-    private Carbon $monthEnd;
-
     public function __construct(private readonly string $month, private readonly User $user) {}
-
-    /**
-     * Fill/font colors per status code for the given cell code, sourced from
-     * AttendanceMonthlySummaryService::CODE_COLORS (hex bg/text) so this export's palette
-     * always matches the on-screen Monthly Attendance View and Attendance Register.
-     *
-     * @return array{fill: string, font: string}|null
-     */
-    private static function cellColors(string $code): ?array
-    {
-        $colors = AttendanceMonthlySummaryService::CODE_COLORS[$code] ?? null;
-
-        return $colors ? ['fill' => ltrim($colors['bg'], '#'), 'font' => ltrim($colors['text'], '#')] : null;
-    }
 
     public function headings(): array
     {
@@ -44,22 +35,36 @@ class AttendanceMonthlySummaryExport implements FromArray, WithEvents, WithHeadi
             $dayHeadings[] = (string) $day;
         }
 
-        return [
-            'Employee Code', 'Name', ...$dayHeadings,
-            'Present', 'Half Day', 'Leave', 'Holiday', 'Weekly Off', 'Absent',
-        ];
+        return ['Employee Code', 'Name', ...$dayHeadings];
     }
 
     public function array(): array
     {
         $this->monthStart = Carbon::createFromFormat('Y-m', $this->month)->startOfMonth();
-        $this->monthEnd = (clone $this->monthStart)->endOfMonth();
+        $monthEnd = (clone $this->monthStart)->endOfMonth();
 
         $summaryService = app(AttendanceMonthlySummaryService::class);
 
-        return $this->employees()->map(
-            fn (Employee $employee) => $this->rowForEmployee($employee, $summaryService)
-        )->all();
+        return $this->employees()->map(function (Employee $employee) use ($summaryService, $monthEnd) {
+            $days = $summaryService->buildForEmployee($employee, $this->monthStart, $monthEnd);
+
+            return [
+                $employee->employee_code,
+                $employee->full_name,
+                ...array_map(fn (array $cell) => $this->cellText($cell), array_values($days)),
+            ];
+        })->all();
+    }
+
+    private function cellText(array $cell): string
+    {
+        if ($cell['first_in']) {
+            $hours = $cell['hours'] !== null ? number_format($cell['hours'], 2).'h' : '—';
+
+            return "{$cell['first_in']}\n{$cell['last_out']}\n{$hours}";
+        }
+
+        return $cell['label'];
     }
 
     private function employees()
@@ -76,25 +81,6 @@ class AttendanceMonthlySummaryExport implements FromArray, WithEvents, WithHeadi
         return $query->whereIn('id', $visibleIds)->get();
     }
 
-    private function rowForEmployee(Employee $employee, AttendanceMonthlySummaryService $summaryService): array
-    {
-        $days = $summaryService->buildForEmployee($employee, $this->monthStart, $this->monthEnd);
-
-        $counts = array_count_values(array_column($days, 'code'));
-
-        return [
-            $employee->employee_code,
-            $employee->full_name,
-            ...array_map(fn (array $cell) => $cell['label'], array_values($days)),
-            $counts[AttendanceMonthlySummaryService::CODE_PRESENT] ?? 0,
-            $counts[AttendanceMonthlySummaryService::CODE_HALF_DAY] ?? 0,
-            $counts[AttendanceMonthlySummaryService::CODE_LEAVE] ?? 0,
-            $counts[AttendanceMonthlySummaryService::CODE_HOLIDAY] ?? 0,
-            $counts[AttendanceMonthlySummaryService::CODE_WEEKLY_OFF] ?? 0,
-            $counts[AttendanceMonthlySummaryService::CODE_ABSENT] ?? 0,
-        ];
-    }
-
     public function registerEvents(): array
     {
         return [
@@ -106,7 +92,12 @@ class AttendanceMonthlySummaryExport implements FromArray, WithEvents, WithHeadi
                 $lastDayColumn = 2 + $daysInMonth;
                 $lastRow = $sheet->getHighestRow();
 
+                $sheet->getStyle('A1:'.Coordinate::stringFromColumnIndex($lastDayColumn).$lastRow)
+                    ->getAlignment()->setWrapText(true)->setVertical(Alignment::VERTICAL_CENTER);
+
                 for ($row = 2; $row <= $lastRow; $row++) {
+                    $sheet->getRowDimension($row)->setRowHeight(40);
+
                     for ($col = $firstDayColumn; $col <= $lastDayColumn; $col++) {
                         $coordinate = Coordinate::stringFromColumnIndex($col).$row;
                         $value = (string) $sheet->getCell($coordinate)->getValue();
@@ -115,15 +106,16 @@ class AttendanceMonthlySummaryExport implements FromArray, WithEvents, WithHeadi
                             continue;
                         }
 
-                        $colors = self::cellColors(strtok($value, ' '));
+                        $code = strtok($value, "\n ");
+                        $colors = AttendanceMonthlySummaryService::CODE_COLORS[$code] ?? null;
 
                         if (! $colors) {
                             continue;
                         }
 
                         $style = $sheet->getStyle($coordinate);
-                        $style->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB($colors['fill']);
-                        $style->getFont()->getColor()->setRGB($colors['font']);
+                        $style->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB(ltrim($colors['bg'], '#'));
+                        $style->getFont()->getColor()->setRGB(ltrim($colors['text'], '#'));
                     }
                 }
             },

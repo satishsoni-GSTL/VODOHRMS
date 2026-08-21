@@ -17,6 +17,8 @@ class WorkflowDefinition extends Model
 
     public const MODULE_RESIGNATION = 'resignation';
 
+    public const MODULE_WORK_FROM_HOME = 'work_from_home';
+
     protected $fillable = ['module', 'name', 'is_active'];
 
     protected function casts(): array
