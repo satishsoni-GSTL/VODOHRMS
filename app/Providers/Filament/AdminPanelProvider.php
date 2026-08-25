@@ -2,7 +2,10 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Auth\ChangePassword;
+use App\Filament\Pages\Auth\ForgotPassword;
 use App\Filament\Pages\Auth\Login;
+use App\Filament\Pages\Auth\ResetPasswordWithOtp;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -28,6 +31,8 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login(Login::class)
+            ->passwordReset(ForgotPassword::class, ResetPasswordWithOtp::class)
+            ->profile(ChangePassword::class)
             ->brandName('GlobalSpace HRMS')
             ->brandLogo(asset('images/globalspace-logo.png'))
             ->brandLogoHeight('2.25rem')
