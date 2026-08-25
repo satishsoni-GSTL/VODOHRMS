@@ -9,6 +9,7 @@ use App\Exports\Reports\EmployeeMasterExport;
 use App\Exports\Reports\ExpenseReportExport;
 use App\Exports\Reports\LeaveReportExport;
 use App\Exports\Reports\LoanReportExport;
+use App\Exports\Reports\MyAttendanceExport;
 use App\Exports\Reports\PayrollFinancialYearExport;
 use App\Exports\Reports\PayrollReportExport;
 use App\Exports\Reports\WfhReportExport;
@@ -37,16 +38,24 @@ class ReportDownloadController extends Controller
     public function __invoke(Request $request, string $type): BinaryFileResponse
     {
         $user = $request->user();
-        $permission = self::PERMISSIONS[$type] ?? null;
-        abort_unless($permission !== null, 404);
 
-        $isManager = $user->employee?->directReports()->exists() ?? false;
-        abort_unless($user->can($permission) || ($isManager && in_array($type, self::TEAM_SCOPED_TYPES, true)), 403);
+        if ($type === 'my_attendance') {
+            // Always the caller's own employee record — not team-scoped, so no
+            // attendance.view/manager check, just "do they have an employee record".
+            abort_unless($user->employee !== null, 403);
+        } else {
+            $permission = self::PERMISSIONS[$type] ?? null;
+            abort_unless($permission !== null, 404);
+
+            $isManager = $user->employee?->directReports()->exists() ?? false;
+            abort_unless($user->can($permission) || ($isManager && in_array($type, self::TEAM_SCOPED_TYPES, true)), 403);
+        }
 
         $month = $request->query('month', now()->format('Y-m'));
 
         [$export, $filename] = match ($type) {
             'employee' => [new EmployeeMasterExport, 'employee-master-report.xlsx'],
+            'my_attendance' => [new MyAttendanceExport($month, $user), "my-attendance-{$month}.xlsx"],
             'attendance' => [new AttendanceReportExport($month, $user), "attendance-report-{$month}.xlsx"],
             'attendance_monthly_summary' => [new AttendanceMonthlySummaryExport($month, $user), "attendance-monthly-summary-{$month}.xlsx"],
             'attendance_register' => [new AttendanceRegisterExport($month, $user), "attendance-register-{$month}.xlsx"],

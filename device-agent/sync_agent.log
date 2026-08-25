@@ -423,3 +423,9 @@ zk.exception.ZKNetworkError: timed out
 2026-08-20 19:01:05,647 [INFO] Batch 400-600: {'matched': 185, 'unmatched': 15, 'duplicate': 0, 'failed': 0}
 2026-08-20 19:01:05,789 [INFO] Batch 600-603: {'matched': 3, 'unmatched': 0, 'duplicate': 0, 'failed': 0}
 2026-08-20 19:01:05,791 [INFO] Sync complete. Cursor advanced to 2026-08-20 18:45:57.
+2026-08-25 11:27:58,697 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-08-25 11:27:59,462 [INFO] Found 114 new punch(es). Pushing to cloud in batches of 200.
+2026-08-25 11:28:00,327 [INFO] Batch 0-114: {'matched': 106, 'unmatched': 8, 'duplicate': 0, 'failed': 0}
+2026-08-25 11:28:00,328 [INFO] Sync complete. Cursor advanced to 2026-08-25 11:01:10.
+2026-08-25 11:28:21,803 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-08-25 11:28:22,416 [INFO] No new punches.

@@ -54,6 +54,7 @@ class Reports extends Page
 
         $reports = [
             ['type' => 'employee', 'label' => 'Employee Master', 'description' => 'Full employee list with department, designation, and status.', 'needsMonth' => false, 'visible' => $user->can('employee.export')],
+            ['type' => 'my_attendance', 'label' => 'My Attendance', 'description' => 'Your own day-by-day attendance for the selected month, with in/out times.', 'needsMonth' => true, 'visible' => $user->employee !== null],
             ['type' => 'attendance', 'label' => 'Attendance', 'description' => 'Daily attendance status for the selected month.', 'needsMonth' => true, 'visible' => $user->can('attendance.view') || $isManager],
             ['type' => 'attendance_monthly_summary', 'label' => 'Employee Monthly Attendance Summary', 'description' => 'One row per employee, one column per day (in/out times, leave, holiday, weekly off) for the selected month.', 'needsMonth' => true, 'visible' => $user->can('attendance.view') || $isManager],
             ['type' => 'attendance_register', 'label' => 'Attendance Register', 'description' => 'Employee-wise rows, day-of-month columns, with first punch, last punch, and work hours shown in every cell.', 'needsMonth' => true, 'visible' => $user->can('attendance.view') || $isManager],
