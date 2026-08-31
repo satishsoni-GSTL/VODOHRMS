@@ -5,8 +5,10 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\EmployeeSalaryStructureResource\Pages;
 use App\Models\EmployeeSalaryStructure;
 use App\Models\SalaryComponent;
+use App\Services\SalaryStructureService;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -74,6 +76,68 @@ class EmployeeSalaryStructureResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
+                Tables\Actions\Action::make('reviseSalary')
+                    ->label('Edit')
+                    ->icon('heroicon-o-pencil-square')
+                    ->color('primary')
+                    ->visible(fn (EmployeeSalaryStructure $record) => $record->is_active
+                        && (auth()->user()?->can('payroll.manage') ?? false))
+                    ->form([
+                        Forms\Components\Placeholder::make('employee_display')
+                            ->label('Employee')
+                            ->content(fn (EmployeeSalaryStructure $record) => "{$record->employee->employee_code} - {$record->employee->full_name}"),
+                        Forms\Components\DatePicker::make('effective_from')
+                            ->default(now())
+                            ->required()
+                            ->minDate(fn (EmployeeSalaryStructure $record) => $record->effective_from->copy()->addDay()),
+                        Forms\Components\TextInput::make('annual_ctc')
+                            ->numeric()
+                            ->required()
+                            ->prefix('₹')
+                            ->default(fn (EmployeeSalaryStructure $record) => $record->annual_ctc),
+                        Forms\Components\Repeater::make('lines')
+                            ->label('Earning Components (monthly amounts)')
+                            ->schema([
+                                Forms\Components\Select::make('salary_component_id')
+                                    ->label('Component')
+                                    ->options(fn () => SalaryComponent::query()->active()->where('type', SalaryComponent::TYPE_EARNING)->orderBy('sequence')->pluck('name', 'id'))
+                                    ->required()
+                                    ->searchable(),
+                                Forms\Components\TextInput::make('monthly_amount')->numeric()->required()->prefix('₹'),
+                            ])
+                            ->columns(2)
+                            ->minItems(1)
+                            ->required()
+                            ->columnSpanFull()
+                            ->default(fn (EmployeeSalaryStructure $record) => $record->lines()
+                                ->whereHas('component', fn ($q) => $q->where('type', SalaryComponent::TYPE_EARNING))
+                                ->get()
+                                ->map(fn ($line) => [
+                                    'salary_component_id' => $line->salary_component_id,
+                                    'monthly_amount' => $line->monthly_amount,
+                                ])
+                                ->all()),
+                        Forms\Components\Textarea::make('remarks')->columnSpanFull(),
+                    ])
+                    ->modalHeading('Edit Salary Structure')
+                    ->modalDescription('Saving creates a new dated version and closes off the current one — prior payroll history is never overwritten.')
+                    ->modalSubmitActionLabel('Save')
+                    ->action(function (EmployeeSalaryStructure $record, array $data) {
+                        $earningAmounts = collect($data['lines'] ?? [])
+                            ->mapWithKeys(fn (array $line) => [$line['salary_component_id'] => (float) $line['monthly_amount']])
+                            ->all();
+
+                        app(SalaryStructureService::class)->assign(
+                            $record->employee,
+                            $data['effective_from'],
+                            (float) $data['annual_ctc'],
+                            $earningAmounts,
+                            auth()->id(),
+                            $data['remarks'] ?? null,
+                        );
+
+                        Notification::make()->title('Salary structure updated')->success()->send();
+                    }),
             ])
             ->bulkActions([]);
     }

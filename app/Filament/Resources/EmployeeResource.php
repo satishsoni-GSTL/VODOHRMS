@@ -62,7 +62,20 @@ class EmployeeResource extends Resource
                             Forms\Components\TextInput::make('official_email')
                                 ->email()
                                 ->maxLength(150)
-                                ->unique(ignoreRecord: true),
+                                ->unique(
+                                    ignoreRecord: true,
+                                    modifyRuleUsing: fn (\Illuminate\Validation\Rules\Unique $rule) => $rule->withoutTrashed(),
+                                )
+                                ->rule(fn (?Employee $record) => function (string $attribute, $value, \Closure $fail) use ($record) {
+                                    $trashed = Employee::onlyTrashed()
+                                        ->where('official_email', $value)
+                                        ->when($record, fn (Builder $q) => $q->where('id', '!=', $record->id))
+                                        ->first();
+
+                                    if ($trashed) {
+                                        $fail("This email belongs to a deleted employee record ({$trashed->employee_code} - {$trashed->full_name}). Restore that record instead — filter Employees by \"Trashed\" and use Restore.");
+                                    }
+                                }),
                         ])
                         ->columns(2),
 
@@ -176,8 +189,6 @@ class EmployeeResource extends Resource
 
     public static function table(Table $table): Table
     {
-        $canViewSensitive = auth()->user()?->can('employee.view-sensitive') ?? false;
-
         return $table
             ->columns([
                 Tables\Columns\ImageColumn::make('profile_photo_path')->circular()->label(''),
@@ -211,14 +222,14 @@ class EmployeeResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make()->visible($canViewSensitive),
-                Tables\Actions\RestoreAction::make()->visible($canViewSensitive),
+                Tables\Actions\DeleteAction::make()->visible(fn () => auth()->user()?->can('employee.delete') ?? false),
+                Tables\Actions\RestoreAction::make()->visible(fn () => auth()->user()?->can('employee.delete') ?? false),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
-                ])->visible($canViewSensitive),
+                ])->visible(fn () => auth()->user()?->can('employee.delete') ?? false),
             ])
             ->defaultSort('employee_code');
     }

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\EmployeeResource\Pages;
 
 use App\Filament\Resources\EmployeeResource;
+use App\Models\Employee;
 use App\Models\User;
 use App\Notifications\PasswordResetByAdminNotification;
 use App\Notifications\WelcomeAccountNotification;
@@ -37,6 +38,47 @@ class EditEmployee extends EditRecord
                             ->title('No email on file')
                             ->body('Add a personal or official email address for this employee before creating a login.')
                             ->danger()
+                            ->send();
+
+                        return;
+                    }
+
+                    $existing = User::where('email', $email)->first();
+
+                    if ($existing) {
+                        $linkedEmployee = $existing->employee_id ? Employee::withTrashed()->find($existing->employee_id) : null;
+                        $orphaned = ! $linkedEmployee || $linkedEmployee->trashed();
+
+                        if (! $orphaned) {
+                            Notification::make()
+                                ->title('Email already in use')
+                                ->body("The email {$email} is already used by the login for {$linkedEmployee->employee_code} - {$linkedEmployee->full_name}. Use a different official/personal email for this employee, or resolve it on that account first.")
+                                ->danger()
+                                ->send();
+
+                            return;
+                        }
+
+                        // The existing account's employee record was deleted (or it was never linked) —
+                        // this is the "email already exists" dead end admins hit; retrieve and relink it
+                        // instead of failing, so the employee gets a working login again.
+                        $tempPassword = Str::password(14);
+
+                        $existing->update([
+                            'employee_id' => $employee->id,
+                            'employee_code' => $employee->employee_code,
+                            'name' => $employee->full_name,
+                            'password' => $tempPassword,
+                            'must_change_password' => true,
+                            'is_active' => true,
+                        ]);
+
+                        $existing->notify(new WelcomeAccountNotification($existing, $tempPassword));
+
+                        Notification::make()
+                            ->title('Existing login retrieved')
+                            ->body("A previous login for {$email} was found (linked to a deleted employee record), reactivated, and relinked to this employee. New temporary credentials were emailed.")
+                            ->success()
                             ->send();
 
                         return;
@@ -122,6 +164,33 @@ class EditEmployee extends EditRecord
                         ->body("New password emailed to {$user->email}.")
                         ->success()
                         ->send();
+                }),
+            Actions\Action::make('deactivateLogin')
+                ->label('Disable Login')
+                ->icon('heroicon-o-lock-closed')
+                ->color('danger')
+                ->requiresConfirmation()
+                ->modalDescription('The employee will no longer be able to sign in. This can be undone at any time with "Enable Login".')
+                ->visible(fn () => auth()->user()?->can('users.manage') && $this->record->user?->is_active)
+                ->action(function () {
+                    $this->record->user->update(['is_active' => false]);
+
+                    app(AuditLogService::class)->log('deactivated', $this->record->user, module: 'User');
+
+                    Notification::make()->title('Login disabled')->success()->send();
+                }),
+            Actions\Action::make('activateLogin')
+                ->label('Enable Login')
+                ->icon('heroicon-o-lock-open')
+                ->color('success')
+                ->requiresConfirmation()
+                ->visible(fn () => auth()->user()?->can('users.manage') && $this->record->user && ! $this->record->user->is_active)
+                ->action(function () {
+                    $this->record->user->update(['is_active' => true]);
+
+                    app(AuditLogService::class)->log('activated', $this->record->user, module: 'User');
+
+                    Notification::make()->title('Login enabled')->success()->send();
                 }),
             Actions\DeleteAction::make(),
         ];

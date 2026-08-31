@@ -58,7 +58,10 @@ class ExpenseClaimResource extends Resource
                         Forms\Components\TextInput::make('bill_number')->maxLength(100),
                         Forms\Components\Select::make('payment_mode')
                             ->options(['cash' => 'Cash', 'card' => 'Card', 'upi' => 'UPI', 'other' => 'Other']),
-                        Forms\Components\FileUpload::make('receipt_path')->directory('expense-receipts'),
+                        Forms\Components\FileUpload::make('receipt_path')
+                            ->directory('expense-receipts')
+                            ->disk('local')
+                            ->visibility('private'),
                         Forms\Components\Textarea::make('description')->columnSpanFull(),
                     ])
                     ->columns(2)
