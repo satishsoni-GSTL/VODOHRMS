@@ -123,7 +123,7 @@ class ApprovalWorkflowService
      */
     public function resolveApproverUserIds(WorkflowLevel $level, Employee $requestingEmployee): array
     {
-        return match ($level->approver_type) {
+        $userIds = match ($level->approver_type) {
             WorkflowLevel::APPROVER_REPORTING_MANAGER => array_filter([
                 $requestingEmployee->reportingManager?->user?->id,
             ]),
@@ -138,6 +138,11 @@ class ApprovalWorkflowService
             WorkflowLevel::APPROVER_DEPARTMENT_HEAD, WorkflowLevel::APPROVER_MANAGEMENT => $this->userIdsWithRole('HR Admin'),
             default => [],
         };
+
+        // A request must never be stuck with nobody able to act on it — e.g. the employee has no
+        // reporting manager configured yet, or nobody currently holds the HR/Finance role a level
+        // requires. Fall back to Super Admin so there's always at least one approver.
+        return $userIds !== [] ? $userIds : $this->userIdsWithRole('Super Admin');
     }
 
     private function userIdsWithRole(string $roleName): array

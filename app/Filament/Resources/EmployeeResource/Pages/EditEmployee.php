@@ -13,11 +13,35 @@ use Filament\Forms;
 use Filament\Forms\Get;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Notifications\Notification as BaseNotification;
 use Illuminate\Support\Str;
+use Throwable;
 
 class EditEmployee extends EditRecord
 {
     protected static string $resource = EmployeeResource::class;
+
+    /**
+     * The account change (new login, new password) has already been saved by the time we
+     * notify — a broken mail transport must surface as a warning, not blow up the action after
+     * the data change already succeeded.
+     */
+    private function notifyOrWarn(User $user, BaseNotification $notification, string $successBody): void
+    {
+        try {
+            $user->notify($notification);
+
+            Notification::make()->title('Done')->body($successBody)->success()->send();
+        } catch (Throwable $e) {
+            report($e);
+
+            Notification::make()
+                ->title('Saved, but the email could not be sent')
+                ->body("The account change was saved, but delivering the email to {$user->email} failed. Share the credentials with the employee another way, or fix mail delivery and use Reset Password to resend.")
+                ->warning()
+                ->send();
+        }
+    }
 
     protected function getHeaderActions(): array
     {
@@ -73,13 +97,11 @@ class EditEmployee extends EditRecord
                             'is_active' => true,
                         ]);
 
-                        $existing->notify(new WelcomeAccountNotification($existing, $tempPassword));
-
-                        Notification::make()
-                            ->title('Existing login retrieved')
-                            ->body("A previous login for {$email} was found (linked to a deleted employee record), reactivated, and relinked to this employee. New temporary credentials were emailed.")
-                            ->success()
-                            ->send();
+                        $this->notifyOrWarn(
+                            $existing,
+                            new WelcomeAccountNotification($existing, $tempPassword),
+                            "A previous login for {$email} was found (linked to a deleted employee record), reactivated, and relinked to this employee. New temporary credentials were emailed.",
+                        );
 
                         return;
                     }
@@ -96,13 +118,11 @@ class EditEmployee extends EditRecord
                         'is_active' => true,
                     ]);
 
-                    $user->notify(new WelcomeAccountNotification($user, $tempPassword));
-
-                    Notification::make()
-                        ->title('Login created')
-                        ->body("Welcome email with temporary credentials sent to {$email}.")
-                        ->success()
-                        ->send();
+                    $this->notifyOrWarn(
+                        $user,
+                        new WelcomeAccountNotification($user, $tempPassword),
+                        "Login created. Welcome email with temporary credentials sent to {$email}.",
+                    );
                 }),
             Actions\Action::make('resetPassword')
                 ->label('Reset Password')
@@ -150,8 +170,6 @@ class EditEmployee extends EditRecord
                         'must_change_password' => $data['must_change_password'],
                     ]);
 
-                    $user->notify(new PasswordResetByAdminNotification($user, $plainPassword));
-
                     app(AuditLogService::class)->log(
                         'password_reset',
                         $user,
@@ -159,11 +177,11 @@ class EditEmployee extends EditRecord
                         module: 'User',
                     );
 
-                    Notification::make()
-                        ->title('Password reset')
-                        ->body("New password emailed to {$user->email}.")
-                        ->success()
-                        ->send();
+                    $this->notifyOrWarn(
+                        $user,
+                        new PasswordResetByAdminNotification($user, $plainPassword),
+                        "Password reset. New password emailed to {$user->email}.",
+                    );
                 }),
             Actions\Action::make('deactivateLogin')
                 ->label('Disable Login')
