@@ -84,6 +84,34 @@ trait HasApprovalActions
     }
 
     /**
+     * Rescue action for a request that never got routed into the workflow (its
+     * approval_instance_id is null — e.g. it was raised before the workflow was configured,
+     * or the submit failed). Without an instance nobody can approve it. Visible only to
+     * HR/admins for the module, and only while the request is unrouted.
+     *
+     * @param  class-string<\Filament\Tables\Actions\Action|Action>  $actionClass
+     */
+    private static function buildSubmitForApprovalAction(string $actionClass)
+    {
+        return $actionClass::make('submitForApproval')
+            ->label('Submit for Approval')
+            ->icon('heroicon-o-paper-airplane')
+            ->color('primary')
+            ->requiresConfirmation()
+            ->modalDescription('This request has no approval routing yet. Send it into the approval workflow now.')
+            ->visible(fn (Model $record) => $record->approval_instance_id === null
+                && app(ApprovalWorkflowService::class)->userCanManageModule($record->getApprovalModule(), auth()->user()))
+            ->action(function (Model $record) {
+                try {
+                    app(ApprovalWorkflowService::class)->submit($record);
+                    Notification::make()->title('Sent for approval')->success()->send();
+                } catch (Throwable $e) {
+                    Notification::make()->title('Could not submit for approval')->body($e->getMessage())->danger()->send();
+                }
+            });
+    }
+
+    /**
      * Optional extra content rendered above the confirmation/remarks form in the approve/
      * reject/send-back modals, so approvers aren't acting blind. Override in a resource to
      * surface entity-specific detail (e.g. expense line items and receipts); default is none.
