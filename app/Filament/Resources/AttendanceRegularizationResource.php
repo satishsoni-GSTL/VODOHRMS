@@ -38,7 +38,7 @@ class AttendanceRegularizationResource extends Resource
                     ->default(fn () => auth()->user()->employee_id)
                     ->disabled(fn () => ! auth()->user()->can('attendance.manage'))
                     ->dehydrated(),
-                Forms\Components\DatePicker::make('attendance_date')->required(),
+                Forms\Components\DatePicker::make('attendance_date')->required()->maxDate(now()->endOfDay()),
                 Forms\Components\Select::make('request_type')->options(AttendanceRegularization::TYPES)->required(),
                 Forms\Components\TimePicker::make('requested_values.first_in')->label('Corrected Check-In')->seconds(false),
                 Forms\Components\TimePicker::make('requested_values.last_out')->label('Corrected Check-Out')->seconds(false),

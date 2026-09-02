@@ -5,7 +5,9 @@ namespace App\Services;
 use App\Models\Attendance;
 use App\Models\AttendanceRegularization;
 use App\Models\Employee;
+use Carbon\Carbon;
 use Carbon\CarbonInterface;
+use Illuminate\Validation\ValidationException;
 
 class AttendanceRegularizationService
 {
@@ -19,6 +21,10 @@ class AttendanceRegularizationService
         string $reason,
         ?string $attachmentPath,
     ): AttendanceRegularization {
+        if ($date->copy()->startOfDay()->greaterThan(Carbon::today())) {
+            throw ValidationException::withMessages(['attendance_date' => 'Regularization cannot be requested for a future date.']);
+        }
+
         $existing = Attendance::query()
             ->where('employee_id', $employee->id)
             ->where('attendance_date', $date->toDateString())

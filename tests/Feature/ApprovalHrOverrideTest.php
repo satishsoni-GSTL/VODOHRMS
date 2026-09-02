@@ -67,8 +67,8 @@ class ApprovalHrOverrideTest extends TestCase
 
         $request = app(WorkFromHomeService::class)->request(
             $employeeUser->employee,
-            Carbon::parse('2026-03-04'),
-            Carbon::parse('2026-03-04'),
+            Carbon::parse('2026-03-02'),
+            Carbon::parse('2026-03-02'),
             'Personal commitment',
         );
 
@@ -90,8 +90,8 @@ class ApprovalHrOverrideTest extends TestCase
 
         $request = app(WorkFromHomeService::class)->request(
             $employeeUser->employee,
-            Carbon::parse('2026-03-04'),
-            Carbon::parse('2026-03-04'),
+            Carbon::parse('2026-03-02'),
+            Carbon::parse('2026-03-02'),
             'Personal commitment',
         );
 

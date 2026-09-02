@@ -136,12 +136,18 @@ class AttendanceMonthlySummaryService
             ];
         }
 
-        if ($attendance->first_in) {
-            return ['code' => self::CODE_MISSING_PUNCH, 'label' => "IN {$attendance->first_in}", 'first_in' => $attendance->first_in, 'last_out' => null, 'hours' => null];
-        }
+        // A one-sided punch (only an in, or only an out) still counts as a present day —
+        // the lone punch time is surfaced so it's clear the other side is missing.
+        if ($attendance->first_in || $attendance->last_out) {
+            $punch = $attendance->first_in ?: $attendance->last_out;
 
-        if ($attendance->last_out) {
-            return ['code' => self::CODE_MISSING_PUNCH, 'label' => "OUT {$attendance->last_out}", 'first_in' => null, 'last_out' => $attendance->last_out, 'hours' => null];
+            return [
+                'code' => $statusCode,
+                'label' => "{$statusCode} {$punch}",
+                'first_in' => $attendance->first_in ?: null,
+                'last_out' => $attendance->first_in ? null : $attendance->last_out,
+                'hours' => $hours !== null ? (float) $hours : null,
+            ];
         }
 
         return $this->plainCell($statusCode);

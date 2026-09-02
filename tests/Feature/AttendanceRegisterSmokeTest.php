@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Pages\AttendanceRegister;
 use App\Models\Attendance;
 use App\Models\Company;
 use App\Models\Employee;
@@ -101,7 +102,7 @@ class AttendanceRegisterSmokeTest extends TestCase
         $this->assertNull($weeklyOffDay['hours']);
     }
 
-    public function test_single_punch_does_not_surface_a_duplicate_out_time(): void
+    public function test_single_punch_counts_as_present_without_a_duplicate_out_time(): void
     {
         $employee = $this->makeUser('REMP003', 'Employee')->employee;
 
@@ -126,9 +127,9 @@ class AttendanceRegisterSmokeTest extends TestCase
         )['2024-01-03'];
 
         $this->assertEquals('09:30:00', $cell['first_in']);
-        $this->assertNull($cell['last_out']);
+        $this->assertNull($cell['last_out']); // no duplicate out time
         $this->assertNull($cell['hours']);
-        $this->assertEquals(AttendanceMonthlySummaryService::CODE_MISSING_PUNCH, $cell['code']);
+        $this->assertEquals(AttendanceMonthlySummaryService::CODE_PRESENT, $cell['code']);
     }
 
     public function test_hours_style_colors_complete_vs_incomplete_against_the_full_day_threshold(): void
@@ -136,7 +137,7 @@ class AttendanceRegisterSmokeTest extends TestCase
         $admin = $this->makeUser('RADMIN003', 'Super Admin');
         $this->actingAs($admin, 'web');
 
-        $page = new \App\Filament\Pages\AttendanceRegister;
+        $page = new AttendanceRegister;
 
         $completeStyle = $page->hoursStyle(8.5, 8.0);
         $incompleteStyle = $page->hoursStyle(5.0, 8.0);

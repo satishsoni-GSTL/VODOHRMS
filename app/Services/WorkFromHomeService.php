@@ -24,6 +24,10 @@ class WorkFromHomeService
             throw ValidationException::withMessages(['to_date' => 'To date cannot be before the from date.']);
         }
 
+        if ($toDate->startOfDay()->greaterThan(Carbon::today())) {
+            throw ValidationException::withMessages(['to_date' => 'Work From Home cannot be requested for a future date.']);
+        }
+
         if ($this->workingDaysBetween($employee, $fromDate, $toDate) === []) {
             throw ValidationException::withMessages(['from_date' => 'The selected range has no working days (all weekly-offs/holidays).']);
         }

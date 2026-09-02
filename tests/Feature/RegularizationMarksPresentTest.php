@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use Database\Seeders\Phase2Seeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -93,6 +94,22 @@ class RegularizationMarksPresentTest extends TestCase
         $this->assertStringStartsWith('09:15', $attendance->first_in);
     }
 
+    public function test_a_future_dated_regularization_is_rejected(): void
+    {
+        $employeeUser = $this->makeUser('EMP150', 'Employee');
+
+        $this->expectException(ValidationException::class);
+
+        app(AttendanceRegularizationService::class)->request(
+            $employeeUser->employee,
+            Carbon::today()->addDay(),
+            'missing_punch',
+            ['first_in' => '09:00', 'last_out' => '18:00'],
+            'Tomorrow',
+            null,
+        );
+    }
+
     public function test_regularization_with_an_explicit_status_keeps_that_status(): void
     {
         $manager = $this->makeUser('MGR101', 'Manager');
@@ -158,8 +175,8 @@ class RegularizationMarksPresentTest extends TestCase
 
         $request = app(WorkFromHomeService::class)->request(
             $employeeUser->employee,
-            Carbon::today()->addDays(2),
-            Carbon::today()->addDays(2),
+            Carbon::parse('2024-01-08'), // a past Monday — WFH can't be future-dated
+            Carbon::parse('2024-01-08'),
             'Plumber visit',
         );
 
