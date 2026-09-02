@@ -78,11 +78,11 @@ class Phase2SmokeTest extends TestCase
         $this->get('/admin/pending-approvals')->assertStatus(200);
     }
 
-    public function test_attendance_regularization_flows_through_manager_and_hr_and_corrects_attendance(): void
+    public function test_attendance_regularization_is_approved_by_a_single_approver_and_corrects_attendance(): void
     {
         $manager = $this->makeUser('MGR001', 'Manager');
         $employee = $this->makeUser('EMP001', 'Employee', $manager->employee_id);
-        $hrAdmin = $this->makeUser('HR001', 'HR Admin');
+        $this->makeUser('HR001', 'HR Admin');
 
         $date = Carbon::today()->subDay();
 
@@ -104,13 +104,8 @@ class Phase2SmokeTest extends TestCase
         $stranger = $this->makeUser('EMP002', 'Employee');
         $this->assertFalse($workflow->canUserActOnInstance($regularization->approvalInstance, $stranger));
 
-        // Manager approves level 1.
+        // A single approval — here the reporting manager — finalises it and corrects attendance.
         $workflow->act($regularization->approvalInstance, $manager, 'approve');
-        $regularization->refresh();
-        $this->assertEquals('manager_approved', $regularization->status);
-
-        // HR approves level 2 (final) -> attendance corrected.
-        $workflow->act($regularization->approvalInstance, $hrAdmin, 'approve');
         $regularization->refresh();
         $this->assertEquals('approved', $regularization->status);
 
@@ -121,6 +116,24 @@ class Phase2SmokeTest extends TestCase
         $this->assertNotNull($attendance);
         $this->assertStringStartsWith('09:30', $attendance->first_in);
         $this->assertNotNull($attendance->effective_hours);
+    }
+
+    public function test_hr_alone_can_approve_an_attendance_regularization(): void
+    {
+        $manager = $this->makeUser('MGR003', 'Manager');
+        $employee = $this->makeUser('EMP003', 'Employee', $manager->employee_id);
+        $hrAdmin = $this->makeUser('HR003', 'HR Admin');
+
+        $date = Carbon::today()->subDay();
+
+        $regularization = app(AttendanceRegularizationService::class)->request(
+            $employee->employee, $date, 'missing_punch',
+            ['first_in' => '09:15', 'last_out' => '18:15'], 'Forgot', null,
+        );
+
+        app(ApprovalWorkflowService::class)->act($regularization->approvalInstance, $hrAdmin, 'approve');
+
+        $this->assertEquals('approved', $regularization->fresh()->status);
     }
 
     public function test_leave_application_debits_balance_only_after_final_approval(): void

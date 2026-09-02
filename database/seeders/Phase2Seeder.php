@@ -12,12 +12,13 @@ class Phase2Seeder extends Seeder
 {
     public function run(): void
     {
+        // Single approval: the reporting manager, or HR via the module-manage override,
+        // approves a regularization outright.
         $this->seedWorkflow(
             WorkflowDefinition::MODULE_ATTENDANCE_REGULARIZATION,
             'Attendance Regularization Approval',
             [
                 ['approver_type' => WorkflowLevel::APPROVER_REPORTING_MANAGER],
-                ['approver_type' => WorkflowLevel::APPROVER_HR],
             ]
         );
 

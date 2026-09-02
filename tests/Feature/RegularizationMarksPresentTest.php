@@ -58,9 +58,8 @@ class RegularizationMarksPresentTest extends TestCase
 
     private function approveFully(AttendanceRegularization $regularization, User $manager, User $hr): void
     {
-        $workflow = app(ApprovalWorkflowService::class);
-        $workflow->act($regularization->approvalInstance, $manager, 'approve');
-        $workflow->act($regularization->approvalInstance->fresh(), $hr, 'approve');
+        // Regularization is single-approval now — the manager's approval finalises it.
+        app(ApprovalWorkflowService::class)->act($regularization->approvalInstance, $manager, 'approve');
     }
 
     public function test_approving_a_regularization_turns_an_absent_day_present(): void
