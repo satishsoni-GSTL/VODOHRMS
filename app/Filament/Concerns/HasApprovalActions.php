@@ -11,6 +11,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\HtmlString;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 /**
  * Shared approve/reject/send-back actions for any Filament resource whose model has an
@@ -24,12 +25,18 @@ trait HasApprovalActions
 {
     protected static function approvalActions(): array
     {
-        return static::buildApprovalActions(\Filament\Tables\Actions\Action::class);
+        return [
+            ...static::buildApprovalActions(\Filament\Tables\Actions\Action::class),
+            static::buildSubmitForApprovalAction(\Filament\Tables\Actions\Action::class),
+        ];
     }
 
     public static function approvalHeaderActions(): array
     {
-        return static::buildApprovalActions(Action::class);
+        return [
+            ...static::buildApprovalActions(Action::class),
+            static::buildSubmitForApprovalAction(Action::class),
+        ];
     }
 
     /**

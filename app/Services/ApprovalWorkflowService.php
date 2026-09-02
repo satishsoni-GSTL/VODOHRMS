@@ -169,17 +169,26 @@ class ApprovalWorkflowService
         return User::role($roleName)->pluck('id')->all();
     }
 
-    public function canUserActOnInstance(ApprovalInstance $instance, User $user): bool
+    /**
+     * Whether this user is an HR/admin who may manage requests in a module wholesale — act
+     * on any level, or push an unrouted request into the workflow.
+     */
+    public function userCanManageModule(?string $module, User $user): bool
     {
         if ($user->hasRole('Super Admin')) {
             return true;
         }
 
+        $permission = self::MODULE_OVERRIDE_PERMISSION[$module] ?? null;
+
+        return $permission !== null && $user->can($permission);
+    }
+
+    public function canUserActOnInstance(ApprovalInstance $instance, User $user): bool
+    {
         $requestable = $instance->requestable;
 
-        $overridePermission = self::MODULE_OVERRIDE_PERMISSION[$requestable?->getApprovalModule()] ?? null;
-
-        if ($overridePermission && $user->can($overridePermission)) {
+        if ($this->userCanManageModule($requestable?->getApprovalModule(), $user)) {
             return true;
         }
 
