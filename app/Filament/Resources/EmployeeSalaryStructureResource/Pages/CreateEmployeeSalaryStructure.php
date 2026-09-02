@@ -20,6 +20,10 @@ class CreateEmployeeSalaryStructure extends CreateRecord
             ->mapWithKeys(fn (array $line) => [$line['salary_component_id'] => (float) $line['monthly_amount']])
             ->all();
 
+        $deductionAmounts = collect($data['deduction_lines'] ?? [])
+            ->mapWithKeys(fn (array $line) => [$line['salary_component_id'] => (float) $line['monthly_amount']])
+            ->all();
+
         return app(SalaryStructureService::class)->assign(
             $employee,
             $data['effective_from'],
@@ -27,6 +31,7 @@ class CreateEmployeeSalaryStructure extends CreateRecord
             $earningAmounts,
             auth()->id(),
             $data['remarks'] ?? null,
+            $deductionAmounts,
         );
     }
 }

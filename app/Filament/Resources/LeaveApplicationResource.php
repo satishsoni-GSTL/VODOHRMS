@@ -82,7 +82,8 @@ class LeaveApplicationResource extends Resource
                 Tables\Filters\SelectFilter::make('leave_type_id')->relationship('leaveType', 'name'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->extraModalFooterActions(fn () => static::approvalActions()),
                 ...static::approvalActions(),
             ])
             ->bulkActions([]);

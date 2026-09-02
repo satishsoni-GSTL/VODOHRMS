@@ -16,6 +16,7 @@ use App\Models\SubDepartment;
 use App\Models\User;
 use App\Notifications\WelcomeAccountNotification;
 use Illuminate\Console\Command;
+use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Throwable;
@@ -27,6 +28,9 @@ class ImportLegacyEmployees extends Command
         {--notify : When combined with --commit, email each newly created login its temporary password.}';
 
     protected $description = 'Import employees from the legacy GlobalSpace HRMS staging database into VODOHRMS.';
+
+    /** Prefix for employee codes minted from legacy staff ids (e.g. GS001). */
+    private const EMPLOYEE_CODE_PREFIX = 'GS';
 
     /** @var array<int, array{code:string,email:string}> */
     private array $issuedCredentials = [];
@@ -75,7 +79,7 @@ class ImportLegacyEmployees extends Command
         }
     }
 
-    private function import(\Illuminate\Database\Connection $legacy): array
+    private function import(Connection $legacy): array
     {
         $companyId = Company::query()->value('id');
 
@@ -102,7 +106,7 @@ class ImportLegacyEmployees extends Command
         $usersCreated = 0;
 
         foreach ($employeeRows as $row) {
-            $employeeCode = 'LEG'.str_pad((string) $row->employee_id, 3, '0', STR_PAD_LEFT);
+            $employeeCode = self::EMPLOYEE_CODE_PREFIX.str_pad((string) $row->employee_id, 3, '0', STR_PAD_LEFT);
 
             $gender = $this->mapGender($genders[$row->gender] ?? null);
             $marital = $this->mapMarital($maritals[$row->marital_status] ?? null);
@@ -245,7 +249,7 @@ class ImportLegacyEmployees extends Command
         ];
     }
 
-    private function importDepartments(\Illuminate\Database\Connection $legacy, ?int $companyId): array
+    private function importDepartments(Connection $legacy, ?int $companyId): array
     {
         $rows = $legacy->table('department')->get()->keyBy('dept_id');
         $map = [];
@@ -277,7 +281,7 @@ class ImportLegacyEmployees extends Command
         return $map;
     }
 
-    private function importDesignations(\Illuminate\Database\Connection $legacy): array
+    private function importDesignations(Connection $legacy): array
     {
         $map = [];
         foreach ($legacy->table('position')->get() as $row) {
@@ -291,7 +295,7 @@ class ImportLegacyEmployees extends Command
         return $map;
     }
 
-    private function importEmploymentTypes(\Illuminate\Database\Connection $legacy): array
+    private function importEmploymentTypes(Connection $legacy): array
     {
         $map = [];
         foreach ($legacy->table('duty_type')->get() as $row) {
@@ -308,7 +312,7 @@ class ImportLegacyEmployees extends Command
         return $map;
     }
 
-    private function importEmployeeTypes(\Illuminate\Database\Connection $legacy): array
+    private function importEmployeeTypes(Connection $legacy): array
     {
         $map = [];
         foreach ($legacy->table('gmb_employee_types')->get() as $row) {

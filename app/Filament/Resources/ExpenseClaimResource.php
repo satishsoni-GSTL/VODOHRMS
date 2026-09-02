@@ -97,7 +97,8 @@ class ExpenseClaimResource extends Resource
                 Tables\Filters\SelectFilter::make('status')->options(ExpenseClaim::STATUSES),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->extraModalFooterActions(fn () => static::approvalActions()),
                 ...static::approvalActions(),
                 Tables\Actions\Action::make('recordPayment')
                     ->label('Record Payment')

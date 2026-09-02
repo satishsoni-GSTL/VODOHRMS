@@ -74,7 +74,8 @@ class WorkFromHomeRequestResource extends Resource
                 Tables\Filters\SelectFilter::make('status')->options(WorkFromHomeRequest::STATUSES),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->extraModalFooterActions(fn () => static::approvalActions()),
                 ...static::approvalActions(),
             ])
             ->bulkActions([]);

@@ -51,7 +51,23 @@ class EmployeeSalaryStructureResource extends Resource
                     ->minItems(1)
                     ->required()
                     ->columnSpanFull()
-                    ->helperText('Statutory deductions (PF, ESIC, Professional Tax) and employer contributions are computed automatically from the Basic component.'),
+                    ->helperText('Statutory deductions (PF, ESIC, Professional Tax) and employer contributions are computed automatically from the Basic component unless you enter them below.'),
+                Forms\Components\Repeater::make('deduction_lines')
+                    ->label('Deduction Components (monthly amounts)')
+                    ->schema([
+                        Forms\Components\Select::make('salary_component_id')
+                            ->label('Component')
+                            ->options(fn () => SalaryComponent::query()->active()->where('type', SalaryComponent::TYPE_DEDUCTION)->orderBy('sequence')->pluck('name', 'id'))
+                            ->required()
+                            ->searchable()
+                            ->distinct()
+                            ->disableOptionsWhenSelectedInSiblingRepeaterItems(),
+                        Forms\Components\TextInput::make('monthly_amount')->numeric()->required()->prefix('₹'),
+                    ])
+                    ->columns(2)
+                    ->minItems(0)
+                    ->columnSpanFull()
+                    ->helperText('Optional. Add a fixed deduction (e.g. a recovery), or set a statutory one by hand to override the auto-computed value.'),
                 Forms\Components\Textarea::make('remarks')->columnSpanFull(),
             ])
             ->columns(2);
@@ -117,6 +133,30 @@ class EmployeeSalaryStructureResource extends Resource
                                     'monthly_amount' => $line->monthly_amount,
                                 ])
                                 ->all()),
+                        Forms\Components\Repeater::make('deduction_lines')
+                            ->label('Deduction Components (monthly amounts)')
+                            ->schema([
+                                Forms\Components\Select::make('salary_component_id')
+                                    ->label('Component')
+                                    ->options(fn () => SalaryComponent::query()->active()->where('type', SalaryComponent::TYPE_DEDUCTION)->orderBy('sequence')->pluck('name', 'id'))
+                                    ->required()
+                                    ->searchable()
+                                    ->distinct()
+                                    ->disableOptionsWhenSelectedInSiblingRepeaterItems(),
+                                Forms\Components\TextInput::make('monthly_amount')->numeric()->required()->prefix('₹'),
+                            ])
+                            ->columns(2)
+                            ->minItems(0)
+                            ->columnSpanFull()
+                            ->helperText('Editing a value here fixes it for this version instead of auto-computing it. Remove a row to hand it back to auto-compute.')
+                            ->default(fn (EmployeeSalaryStructure $record) => $record->lines()
+                                ->whereHas('component', fn ($q) => $q->where('type', SalaryComponent::TYPE_DEDUCTION))
+                                ->get()
+                                ->map(fn ($line) => [
+                                    'salary_component_id' => $line->salary_component_id,
+                                    'monthly_amount' => $line->monthly_amount,
+                                ])
+                                ->all()),
                         Forms\Components\Textarea::make('remarks')->columnSpanFull(),
                     ])
                     ->modalHeading('Edit Salary Structure')
@@ -127,6 +167,10 @@ class EmployeeSalaryStructureResource extends Resource
                             ->mapWithKeys(fn (array $line) => [$line['salary_component_id'] => (float) $line['monthly_amount']])
                             ->all();
 
+                        $deductionAmounts = collect($data['deduction_lines'] ?? [])
+                            ->mapWithKeys(fn (array $line) => [$line['salary_component_id'] => (float) $line['monthly_amount']])
+                            ->all();
+
                         app(SalaryStructureService::class)->assign(
                             $record->employee,
                             $data['effective_from'],
@@ -134,6 +178,7 @@ class EmployeeSalaryStructureResource extends Resource
                             $earningAmounts,
                             auth()->id(),
                             $data['remarks'] ?? null,
+                            $deductionAmounts,
                         );
 
                         Notification::make()->title('Salary structure updated')->success()->send();

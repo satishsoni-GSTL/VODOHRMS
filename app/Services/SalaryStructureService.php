@@ -16,6 +16,9 @@ class SalaryStructureService
      * the previous active row is closed off (effective_to) and a new versioned row is inserted.
      *
      * @param  array<int, float>  $earningMonthlyAmounts  [salary_component_id => monthly_amount] for earning-type lines, HR-entered.
+     * @param  array<int, float>  $manualDeductionAmounts  [salary_component_id => monthly_amount] for deduction-type lines HR entered
+     *                                                     by hand. These win over the auto-computed statutory values for the same
+     *                                                     component; any deduction left out here is still auto-computed from Basic.
      */
     public function assign(
         Employee $employee,
@@ -24,12 +27,13 @@ class SalaryStructureService
         array $earningMonthlyAmounts,
         ?int $approvedBy = null,
         ?string $remarks = null,
+        array $manualDeductionAmounts = [],
     ): EmployeeSalaryStructure {
         if ($earningMonthlyAmounts === []) {
             throw ValidationException::withMessages(['lines' => 'At least one earning component is required.']);
         }
 
-        return DB::transaction(function () use ($employee, $effectiveFrom, $annualCtc, $earningMonthlyAmounts, $approvedBy, $remarks) {
+        return DB::transaction(function () use ($employee, $effectiveFrom, $annualCtc, $earningMonthlyAmounts, $approvedBy, $remarks, $manualDeductionAmounts) {
             $previous = $employee->currentSalaryStructure();
 
             if ($previous && Carbon::parse($effectiveFrom)->lte(Carbon::parse($previous->effective_from))) {
@@ -68,7 +72,9 @@ class SalaryStructureService
                 }
             }
 
-            $this->applyAutoComputedComponents($structure, $basicMonthly);
+            $manualDeductionIds = $this->applyManualDeductions($structure, $manualDeductionAmounts);
+
+            $this->applyAutoComputedComponents($structure, $basicMonthly, $manualDeductionIds);
 
             $structure->monthly_gross = $structure->lines()
                 ->whereHas('component', fn ($q) => $q->where('is_gross_component', true))
@@ -87,14 +93,59 @@ class SalaryStructureService
     }
 
     /**
+     * Persist HR-entered deduction lines. Zero/blank amounts and non-deduction components are
+     * ignored. Returns the component ids actually written, so applyAutoComputedComponents can
+     * leave those alone instead of double-adding them.
+     *
+     * @param  array<int, float>  $manualDeductionAmounts
+     * @return array<int, int>
+     */
+    private function applyManualDeductions(EmployeeSalaryStructure $structure, array $manualDeductionAmounts): array
+    {
+        if ($manualDeductionAmounts === []) {
+            return [];
+        }
+
+        $components = SalaryComponent::query()
+            ->whereIn('id', array_keys($manualDeductionAmounts))
+            ->where('type', SalaryComponent::TYPE_DEDUCTION)
+            ->pluck('id')
+            ->flip();
+
+        $written = [];
+
+        foreach ($manualDeductionAmounts as $componentId => $monthlyAmount) {
+            $monthlyAmount = (float) $monthlyAmount;
+
+            if ($monthlyAmount <= 0 || ! $components->has($componentId)) {
+                continue;
+            }
+
+            $structure->lines()->create([
+                'salary_component_id' => $componentId,
+                'monthly_amount' => $monthlyAmount,
+                'annual_amount' => round($monthlyAmount * 12, 2),
+            ]);
+
+            $written[] = (int) $componentId;
+        }
+
+        return $written;
+    }
+
+    /**
      * Auto-compute deduction / employer_contribution components (PF, ESIC, Professional Tax, etc.)
      * that are configured on the salary_components master rather than entered per-employee.
+     * Components in $skipComponentIds were already set by hand and are left untouched.
+     *
+     * @param  array<int, int>  $skipComponentIds
      */
-    private function applyAutoComputedComponents(EmployeeSalaryStructure $structure, float $basicMonthly): void
+    private function applyAutoComputedComponents(EmployeeSalaryStructure $structure, float $basicMonthly, array $skipComponentIds = []): void
     {
         $autoComponents = SalaryComponent::query()
             ->whereIn('type', [SalaryComponent::TYPE_DEDUCTION, SalaryComponent::TYPE_EMPLOYER_CONTRIBUTION])
             ->active()
+            ->whereNotIn('id', $skipComponentIds)
             ->get();
 
         foreach ($autoComponents as $component) {
