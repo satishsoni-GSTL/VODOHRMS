@@ -5,17 +5,14 @@ namespace App\Services;
 use App\Models\Attendance;
 use App\Models\AttendancePunch;
 use App\Models\Employee;
-use App\Models\Holiday;
 use App\Models\WorkFromHomeRequest;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
-use Carbon\CarbonPeriod;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class WorkFromHomeService
 {
-    private const DEFAULT_WEEKLY_OFF = ['saturday', 'sunday'];
-
     public function __construct(
         private readonly ApprovalWorkflowService $workflow,
         private readonly AttendanceService $attendanceService,
@@ -42,15 +39,22 @@ class WorkFromHomeService
             throw ValidationException::withMessages(['from_date' => 'You already have a pending or approved Work From Home request overlapping these dates.']);
         }
 
-        $request = WorkFromHomeRequest::create([
-            'employee_id' => $employee->id,
-            'from_date' => $fromDate->toDateString(),
-            'to_date' => $toDate->toDateString(),
-            'reason' => $reason,
-            'status' => WorkFromHomeRequest::STATUS_PENDING,
-        ]);
+        // Create + route to the workflow atomically: if submit() fails (e.g. no active
+        // work_from_home workflow configured) we must not leave a request stranded with no
+        // approval instance — nobody could ever action it.
+        $request = DB::transaction(function () use ($employee, $fromDate, $toDate, $reason) {
+            $request = WorkFromHomeRequest::create([
+                'employee_id' => $employee->id,
+                'from_date' => $fromDate->toDateString(),
+                'to_date' => $toDate->toDateString(),
+                'reason' => $reason,
+                'status' => WorkFromHomeRequest::STATUS_PENDING,
+            ]);
 
-        $this->workflow->submit($request);
+            $this->workflow->submit($request);
+
+            return $request;
+        });
 
         return $request->fresh();
     }
@@ -85,30 +89,7 @@ class WorkFromHomeService
      */
     public function workingDaysBetween(Employee $employee, CarbonInterface $from, CarbonInterface $to): array
     {
-        $weeklyOff = collect($employee->weekly_off ?: self::DEFAULT_WEEKLY_OFF)->map(fn ($d) => strtolower($d));
-
-        $holidays = Holiday::query()
-            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
-            ->where(fn ($q) => $q->whereNull('company_id')->orWhere('company_id', $employee->company_id))
-            ->pluck('date')
-            ->map(fn ($d) => $d->toDateString())
-            ->all();
-
-        $days = [];
-
-        foreach (CarbonPeriod::create($from, $to) as $date) {
-            if (in_array(strtolower($date->format('l')), $weeklyOff->all(), true)) {
-                continue;
-            }
-
-            if (in_array($date->toDateString(), $holidays, true)) {
-                continue;
-            }
-
-            $days[] = $date->toDateString();
-        }
-
-        return $days;
+        return app(WorkingDayService::class)->between($employee, $from, $to);
     }
 
     /**

@@ -10,15 +10,22 @@ use Illuminate\Validation\ValidationException;
 
 class LeaveApplicationService
 {
-    public function __construct(private readonly ApprovalWorkflowService $workflow) {}
+    public function __construct(
+        private readonly ApprovalWorkflowService $workflow,
+        private readonly WorkingDayService $workingDays,
+    ) {}
 
-    public function calculateDays(CarbonInterface $from, CarbonInterface $to, bool $isHalfDay): float
+    /**
+     * Leave is counted in working days only — the employee's weekly-offs and company
+     * holidays inside the range don't consume balance.
+     */
+    public function calculateDays(Employee $employee, CarbonInterface $from, CarbonInterface $to, bool $isHalfDay): float
     {
         if ($isHalfDay) {
             return 0.5;
         }
 
-        return (float) ($from->diffInDays($to) + 1);
+        return (float) $this->workingDays->count($employee, $from, $to);
     }
 
     public function apply(
@@ -35,7 +42,11 @@ class LeaveApplicationService
             throw ValidationException::withMessages(['to_date' => 'To date cannot be before from date.']);
         }
 
-        $days = $this->calculateDays($from, $to, $isHalfDay);
+        $days = $this->calculateDays($employee, $from, $to, $isHalfDay);
+
+        if ($days <= 0) {
+            throw ValidationException::withMessages(['from_date' => 'The selected range has no working days (all weekly-offs/holidays).']);
+        }
 
         if ($leaveType->min_days_per_request && $days < $leaveType->min_days_per_request) {
             throw ValidationException::withMessages(['days' => "Minimum {$leaveType->min_days_per_request} day(s) required for {$leaveType->name}."]);

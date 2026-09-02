@@ -22,6 +22,20 @@ class ApprovalWorkflowService
 {
     use NotifiesRecipients;
 
+    /**
+     * The "manage" permission that lets an HR/admin user act on any request in a module,
+     * whatever level it is routed to. Keeps HR from being blocked when the routed approver
+     * (usually the reporting manager) is unavailable.
+     */
+    private const MODULE_OVERRIDE_PERMISSION = [
+        WorkflowDefinition::MODULE_LEAVE => 'leave.manage',
+        WorkflowDefinition::MODULE_ATTENDANCE_REGULARIZATION => 'attendance.manage',
+        WorkflowDefinition::MODULE_WORK_FROM_HOME => 'attendance.manage',
+        WorkflowDefinition::MODULE_EXPENSE => 'expense.manage',
+        WorkflowDefinition::MODULE_LOAN => 'loan.manage',
+        WorkflowDefinition::MODULE_RESIGNATION => 'resignation.manage',
+    ];
+
     public function __construct(private readonly AuditLogService $auditLog) {}
 
     /**
@@ -160,13 +174,20 @@ class ApprovalWorkflowService
             return true;
         }
 
+        $requestable = $instance->requestable;
+
+        $overridePermission = self::MODULE_OVERRIDE_PERMISSION[$requestable?->getApprovalModule()] ?? null;
+
+        if ($overridePermission && $user->can($overridePermission)) {
+            return true;
+        }
+
         $level = $this->currentLevel($instance);
 
         if (! $level) {
             return false;
         }
 
-        $requestable = $instance->requestable;
         $employee = Employee::find($requestable->getRequestingEmployeeId());
 
         if (! $employee) {
