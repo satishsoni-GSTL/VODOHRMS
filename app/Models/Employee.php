@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Log;
 
 class Employee extends Model
 {
@@ -16,6 +17,53 @@ class Employee extends Model
     protected function auditModule(): string
     {
         return 'employee';
+    }
+
+    protected static function booted(): void
+    {
+        // The linked login's `email` is only seeded once, when the login is created. Keep it
+        // following the employee's official/personal email so notifications (which route via
+        // $user->email) don't keep going to a stale address after a domain change.
+        static::updated(function (Employee $employee): void {
+            if ($employee->wasChanged(['official_email', 'personal_email'])) {
+                $employee->syncLoginEmail();
+            }
+        });
+    }
+
+    /**
+     * Point the linked login at this employee's current official (or, failing that, personal)
+     * email. No-op when there is no login, nothing to change, or the target address already
+     * belongs to a different login (logged, so the clash can be resolved by hand).
+     */
+    public function syncLoginEmail(): bool
+    {
+        $user = $this->user()->first();
+
+        if (! $user) {
+            return false;
+        }
+
+        $target = $this->official_email ?: $this->personal_email;
+
+        if (! $target || strcasecmp($target, (string) $user->email) === 0) {
+            return false;
+        }
+
+        if (User::where('email', $target)->whereKeyNot($user->getKey())->exists()) {
+            Log::warning('Skipped login-email sync: target address already in use by another login', [
+                'employee_id' => $this->id,
+                'employee_code' => $this->employee_code,
+                'current' => $user->email,
+                'target' => $target,
+            ]);
+
+            return false;
+        }
+
+        $user->forceFill(['email' => $target])->save();
+
+        return true;
     }
 
     public const STATUS_ACTIVE = 'active';

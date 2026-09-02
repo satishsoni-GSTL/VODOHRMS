@@ -65,7 +65,7 @@ class WfhReport extends Page implements HasTable
             ))
             ->columns([
                 Tables\Columns\TextColumn::make('employee.employee_code')->label('Code')->searchable(),
-                Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(),
+                Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(['first_name', 'middle_name', 'last_name']),
                 Tables\Columns\TextColumn::make('attendance_date')->label('Date')->date()->sortable(),
                 Tables\Columns\TextColumn::make('first_in')->label('In Time')->time('H:i')->placeholder('—'),
                 Tables\Columns\TextColumn::make('last_out')->label('Out Time')->time('H:i')->placeholder('—')
@@ -74,6 +74,7 @@ class WfhReport extends Page implements HasTable
                     ->label('Hours Completed')
                     ->placeholder('—')
                     ->badge()
+                    ->formatStateUsing(fn ($state) => Attendance::formatHours($state) ?? '—')
                     ->color(function (Attendance $record) {
                         if ($record->effective_hours === null) {
                             return 'gray';

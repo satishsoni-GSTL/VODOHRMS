@@ -44,8 +44,8 @@
             </div>
         @endforeach
         <div class="rounded-xl bg-white p-4 text-center shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
-            <div class="text-2xl font-semibold">{{ $totals['hours'] }}</div>
-            <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">Total Hours (avg {{ $totals['avg_hours'] }}/day)</div>
+            <div class="text-2xl font-semibold">{{ \App\Models\Attendance::formatHours($totals['hours']) ?? '0h' }}</div>
+            <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">Total Hours (avg {{ \App\Models\Attendance::formatHours($totals['avg_hours']) ?? '0h' }}/day)</div>
         </div>
     </div>
 
@@ -78,7 +78,7 @@
                         </td>
                         <td class="p-3">{{ $cell['first_in'] ?? '—' }}</td>
                         <td class="p-3">{{ $cell['last_out'] ?? '—' }}</td>
-                        <td class="p-3">{{ $cell['hours'] !== null ? number_format($cell['hours'], 2) : '—' }}</td>
+                        <td class="p-3">{{ \App\Models\Attendance::formatHours($cell['hours']) ?? '—' }}</td>
                     </tr>
                 @empty
                     <tr>

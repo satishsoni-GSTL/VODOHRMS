@@ -437,3 +437,24 @@ zk.exception.ZKNetworkError: timed out
 2026-08-31 12:52:57,121 [INFO] Found 53 new punch(es). Pushing to cloud in batches of 200.
 2026-08-31 12:52:57,581 [INFO] Batch 0-53: {'matched': 49, 'unmatched': 4, 'duplicate': 0, 'failed': 0}
 2026-08-31 12:52:57,582 [INFO] Sync complete. Cursor advanced to 2026-08-31 11:22:58.
+2026-09-01 12:50:50,055 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-09-01 12:50:50,951 [INFO] Found 47 new punch(es). Pushing to cloud in batches of 200.
+2026-09-01 12:50:51,429 [INFO] Batch 0-47: {'matched': 44, 'unmatched': 3, 'duplicate': 0, 'failed': 0}
+2026-09-01 12:50:51,429 [INFO] Sync complete. Cursor advanced to 2026-09-01 11:25:32.
+2026-09-02 11:50:44,902 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-09-02 11:50:48,907 [ERROR] Sync run failed
+Traceback (most recent call last):
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 147, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 113, in main
+    records = fetch_new_punches(config, since)
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 79, in fetch_new_punches
+    conn = zk.connect()
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 367, in connect
+    raise ZKNetworkError("can't reach device (ping %s)" % self.__address[0])
+zk.exception.ZKNetworkError: can't reach device (ping 192.168.1.201)
+2026-09-02 11:53:32,673 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-09-02 11:53:33,501 [INFO] Found 52 new punch(es). Pushing to cloud in batches of 200.
+2026-09-02 11:53:34,180 [INFO] Batch 0-52: {'matched': 51, 'unmatched': 1, 'duplicate': 0, 'failed': 0}
+2026-09-02 11:53:34,181 [INFO] Sync complete. Cursor advanced to 2026-09-02 11:20:26.

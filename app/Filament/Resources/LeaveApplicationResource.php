@@ -56,7 +56,7 @@ class LeaveApplicationResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('employee.employee_code')->label('Code')->searchable(),
-                Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(),
+                Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(['first_name', 'middle_name', 'last_name']),
                 Tables\Columns\TextColumn::make('leaveType.name')->label('Type'),
                 Tables\Columns\TextColumn::make('from_date')->date()->sortable(),
                 Tables\Columns\TextColumn::make('to_date')->date()->sortable(),

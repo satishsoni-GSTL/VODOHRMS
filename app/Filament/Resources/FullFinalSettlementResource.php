@@ -55,7 +55,7 @@ class FullFinalSettlementResource extends Resource
             ->defaultSort('created_at', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('employee.employee_code')->label('Code')->searchable(),
-                Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(),
+                Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(['first_name', 'middle_name', 'last_name']),
                 Tables\Columns\TextColumn::make('final_amount')->money('INR')->weight('bold'),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()

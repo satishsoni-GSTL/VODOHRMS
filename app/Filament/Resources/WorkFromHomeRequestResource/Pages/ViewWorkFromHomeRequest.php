@@ -12,6 +12,11 @@ class ViewWorkFromHomeRequest extends ViewRecord
 {
     protected static string $resource = WorkFromHomeRequestResource::class;
 
+    protected function getHeaderActions(): array
+    {
+        return WorkFromHomeRequestResource::approvalHeaderActions();
+    }
+
     public function infolist(Infolist $infolist): Infolist
     {
         return $infolist->schema([

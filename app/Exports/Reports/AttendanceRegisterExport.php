@@ -2,6 +2,7 @@
 
 namespace App\Exports\Reports;
 
+use App\Models\Attendance;
 use App\Models\Employee;
 use App\Models\User;
 use App\Services\AttendanceMonthlySummaryService;
@@ -80,7 +81,7 @@ class AttendanceRegisterExport implements FromArray, WithEvents, WithHeadings
     {
         if ($cell['first_in']) {
             $lastOut = $cell['last_out'] ?? '—';
-            $hours = $cell['hours'] !== null ? number_format($cell['hours'], 2).'h' : '—';
+            $hours = Attendance::formatHours($cell['hours']) ?? '—';
 
             return "{$cell['first_in']}\n{$lastOut}\n{$hours}";
         }

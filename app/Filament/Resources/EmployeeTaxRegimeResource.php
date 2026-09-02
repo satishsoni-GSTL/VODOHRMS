@@ -54,7 +54,7 @@ class EmployeeTaxRegimeResource extends Resource
             ->defaultSort('selection_date', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('employee.employee_code')->label('Code')->searchable(),
-                Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(),
+                Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(['first_name', 'middle_name', 'last_name']),
                 Tables\Columns\TextColumn::make('financialYear.name')->label('FY'),
                 Tables\Columns\TextColumn::make('selected_regime')->badge(),
                 Tables\Columns\TextColumn::make('selection_date')->date(),

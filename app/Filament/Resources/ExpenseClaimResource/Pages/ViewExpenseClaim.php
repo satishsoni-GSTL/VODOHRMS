@@ -12,6 +12,11 @@ class ViewExpenseClaim extends ViewRecord
 {
     protected static string $resource = ExpenseClaimResource::class;
 
+    protected function getHeaderActions(): array
+    {
+        return ExpenseClaimResource::approvalHeaderActions();
+    }
+
     public function infolist(Infolist $infolist): Infolist
     {
         return $infolist->schema([

@@ -53,7 +53,7 @@ class EmployeeTaxDeclarationResource extends Resource
             ->defaultSort('created_at', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('employee.employee_code')->label('Code')->searchable(),
-                Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(),
+                Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(['first_name', 'middle_name', 'last_name']),
                 Tables\Columns\TextColumn::make('financialYear.name')->label('FY'),
                 Tables\Columns\TextColumn::make('taxSection.code')->label('Section'),
                 Tables\Columns\TextColumn::make('declared_amount')->money('INR'),

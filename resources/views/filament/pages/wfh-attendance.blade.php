@@ -24,7 +24,7 @@
                 </div>
                 <div class="text-sm">
                     <span class="text-gray-500 dark:text-gray-400">Hours So Far:</span>
-                    <span class="font-medium">{{ $today->effective_hours ?? '—' }}</span>
+                    <span class="font-medium">{{ \App\Models\Attendance::formatHours($today->effective_hours) ?? '—' }}</span>
                 </div>
 
                 <div class="ml-auto flex gap-2">
@@ -68,7 +68,7 @@
                             <td class="px-3 py-2">{{ \Illuminate\Support\Carbon::parse($row['date'])->format('d M Y') }}</td>
                             <td class="px-3 py-2">{{ $row['first_in'] ?? '—' }}</td>
                             <td class="px-3 py-2">{{ $row['last_out'] ?? '—' }}</td>
-                            <td class="px-3 py-2">{{ $row['effective_hours'] ?? '—' }}</td>
+                            <td class="px-3 py-2">{{ \App\Models\Attendance::formatHours($row['effective_hours']) ?? '—' }}</td>
                             <td class="px-3 py-2">
                                 @if ($row['late_mark'])
                                     <span class="fi-badge inline-flex items-center rounded-md bg-danger-50 px-2 py-1 text-xs font-medium text-danger-700 dark:bg-danger-500/10 dark:text-danger-400">

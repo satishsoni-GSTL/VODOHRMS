@@ -63,7 +63,7 @@ class EmployeeSalaryStructureResource extends Resource
             ->defaultSort('effective_from', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('employee.employee_code')->label('Code')->searchable(),
-                Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(),
+                Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(['first_name', 'middle_name', 'last_name']),
                 Tables\Columns\TextColumn::make('effective_from')->date()->sortable(),
                 Tables\Columns\TextColumn::make('effective_to')->date()->placeholder('Current'),
                 Tables\Columns\TextColumn::make('annual_ctc')->money('INR'),

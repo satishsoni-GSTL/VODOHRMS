@@ -33,7 +33,7 @@ class ManagePayrollRun extends ViewRecord implements HasTable
             ->query(fn () => PayrollRunEmployee::query()->where('payroll_run_id', $this->record->id))
             ->columns([
                 Tables\Columns\TextColumn::make('employee.employee_code')->label('Code')->searchable(),
-                Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(),
+                Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(['first_name', 'middle_name', 'last_name']),
                 Tables\Columns\TextColumn::make('paid_days'),
                 Tables\Columns\TextColumn::make('lop_days'),
                 Tables\Columns\TextColumn::make('gross_earnings')->money('INR'),

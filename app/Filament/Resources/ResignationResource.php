@@ -59,7 +59,7 @@ class ResignationResource extends Resource
             ->defaultSort('created_at', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('employee.employee_code')->label('Code')->searchable(),
-                Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(),
+                Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(['first_name', 'middle_name', 'last_name']),
                 Tables\Columns\TextColumn::make('resignation_date')->date(),
                 Tables\Columns\TextColumn::make('requested_last_working_date')->label('Requested LWD')->date(),
                 Tables\Columns\TextColumn::make('approved_last_working_date')->label('Approved LWD')->date()->placeholder('—'),

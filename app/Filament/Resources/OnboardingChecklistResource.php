@@ -40,7 +40,7 @@ class OnboardingChecklistResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('employee.employee_code')->label('Code')->searchable(),
-                Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(),
+                Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(['first_name', 'middle_name', 'last_name']),
                 Tables\Columns\IconColumn::make('personal_details_done')->boolean()->label('Personal'),
                 Tables\Columns\IconColumn::make('documents_done')->boolean()->label('Docs'),
                 Tables\Columns\IconColumn::make('statutory_done')->boolean()->label('Statutory'),

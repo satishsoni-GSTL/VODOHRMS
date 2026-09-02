@@ -26,7 +26,7 @@ class DevicePunchLogResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('device.name')->label('Device')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('device_user_id')->label('Device User ID')->searchable(),
-                Tables\Columns\TextColumn::make('employee.full_name')->label('Matched Employee')->searchable()->placeholder('—'),
+                Tables\Columns\TextColumn::make('employee.full_name')->label('Matched Employee')->searchable(['first_name', 'middle_name', 'last_name'])->placeholder('—'),
                 Tables\Columns\TextColumn::make('punch_time')->dateTime('d M Y H:i:s')->sortable(),
                 Tables\Columns\TextColumn::make('punch_type')->badge()->toggleable(),
                 Tables\Columns\TextColumn::make('status')

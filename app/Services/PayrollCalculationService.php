@@ -23,6 +23,12 @@ class PayrollCalculationService
 {
     use NotifiesRecipients;
 
+    /**
+     * Weekly-off applied when an employee has no `weekly_off` configured, so Saturdays and
+     * Sundays are treated as paid weekly-offs (never LOP). Mirrors WorkFromHomeService.
+     */
+    private const DEFAULT_WEEKLY_OFF = ['saturday', 'sunday'];
+
     public function __construct(
         private readonly IncomeTaxCalculationService $incomeTax,
         private readonly LoanService $loans,
@@ -184,7 +190,7 @@ class PayrollCalculationService
      */
     private function calculatePaidDays(Employee $employee, Carbon $monthStart, Carbon $monthEnd): array
     {
-        $weeklyOff = collect($employee->weekly_off ?? [])->map(fn ($d) => strtolower($d));
+        $weeklyOff = collect($employee->weekly_off ?: self::DEFAULT_WEEKLY_OFF)->map(fn ($d) => strtolower($d));
 
         $holidays = Holiday::query()
             ->whereBetween('date', [$monthStart->toDateString(), $monthEnd->toDateString()])
@@ -235,10 +241,15 @@ class PayrollCalculationService
 
             $attendance = $attendanceByDate->get($dateString);
 
+            // At least one punch on the day counts as a full present day — HR treats LOP as
+            // presence-based, not hours-based — so a forgotten out-punch (status still
+            // "absent"/"missing_punch") is not docked.
+            $hasAnyPunch = $attendance && ($attendance->first_in || $attendance->last_out);
+
             $portion = match ($attendance?->status) {
                 Attendance::STATUS_PRESENT, Attendance::STATUS_WFH, Attendance::STATUS_ON_DUTY => 1.0,
                 Attendance::STATUS_HALF_DAY => 0.5,
-                default => 0.0,
+                default => $hasAnyPunch ? 1.0 : 0.0,
             };
 
             $paidDays += $portion;

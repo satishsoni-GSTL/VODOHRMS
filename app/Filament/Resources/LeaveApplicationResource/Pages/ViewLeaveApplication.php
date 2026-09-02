@@ -11,6 +11,11 @@ class ViewLeaveApplication extends ViewRecord
 {
     protected static string $resource = LeaveApplicationResource::class;
 
+    protected function getHeaderActions(): array
+    {
+        return LeaveApplicationResource::approvalHeaderActions();
+    }
+
     public function infolist(Infolist $infolist): Infolist
     {
         return $infolist->schema([

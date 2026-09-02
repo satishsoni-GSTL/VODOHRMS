@@ -63,7 +63,7 @@ class EmployeeLoanResource extends Resource
             ->defaultSort('created_at', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('employee.employee_code')->label('Code')->searchable(),
-                Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(),
+                Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(['first_name', 'middle_name', 'last_name']),
                 Tables\Columns\TextColumn::make('type'),
                 Tables\Columns\TextColumn::make('requested_amount')->money('INR'),
                 Tables\Columns\TextColumn::make('approved_amount')->money('INR')->placeholder('—'),

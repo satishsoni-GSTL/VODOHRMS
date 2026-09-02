@@ -98,6 +98,13 @@ class AttendanceService
     /**
      * Apply an approved regularization's corrected values to the day's attendance record,
      * preserving the pre-correction values that were captured on submission.
+     *
+     * An approved regularization means the day is a worked day, so it lands as Present even
+     * when the register previously had it as Absent / Missing Punch. Two things are left
+     * alone: a day already on approved Leave (clearing it here would drop the leave without
+     * refunding the balance), and a frozen day (locked by a finalized payroll run). A
+     * regularization that carries an explicit `status` in its requested values (e.g. a
+     * deliberate Half Day / WFH / On Duty correction) keeps that status.
      */
     public function applyRegularization(AttendanceRegularization $regularization): void
     {
@@ -106,11 +113,18 @@ class AttendanceService
             'attendance_date' => $regularization->attendance_date->toDateString(),
         ]);
 
-        $attendance->fill($regularization->requested_values);
+        if ($attendance->is_frozen) {
+            return;
+        }
+
+        $requestedValues = $regularization->requested_values ?? [];
+        $attendance->fill($requestedValues);
         $attendance->source = 'manual';
 
-        if (! $attendance->exists) {
-            $attendance->status ??= Attendance::STATUS_PRESENT;
+        $keepExistingStatus = $attendance->exists && $attendance->status === Attendance::STATUS_LEAVE;
+
+        if (! array_key_exists('status', $requestedValues) && ! $keepExistingStatus) {
+            $attendance->status = Attendance::STATUS_PRESENT;
         }
 
         $this->recalculate($attendance);

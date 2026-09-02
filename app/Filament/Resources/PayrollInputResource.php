@@ -49,7 +49,7 @@ class PayrollInputResource extends Resource
             ->defaultSort('created_at', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('employee.employee_code')->label('Code')->searchable(),
-                Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(),
+                Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(['first_name', 'middle_name', 'last_name']),
                 Tables\Columns\TextColumn::make('payroll_month'),
                 Tables\Columns\TextColumn::make('type')->formatStateUsing(fn (string $state) => PayrollInput::TYPES[$state] ?? $state)->badge(),
                 Tables\Columns\TextColumn::make('amount')->money('INR'),

@@ -54,7 +54,7 @@ class WorkFromHomeRequestResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('employee.employee_code')->label('Code')->searchable(),
-                Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(),
+                Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(['first_name', 'middle_name', 'last_name']),
                 Tables\Columns\TextColumn::make('from_date')->date()->sortable(),
                 Tables\Columns\TextColumn::make('to_date')->date()->sortable(),
                 Tables\Columns\TextColumn::make('total_days')->label('Working Days')->state(fn (WorkFromHomeRequest $record) => $record->total_days),

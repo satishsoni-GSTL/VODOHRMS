@@ -62,7 +62,7 @@
                                         <div>{{ \Illuminate\Support\Str::of($cell['first_in'])->limit(5, '') }}</div>
                                         <div>{{ $cell['last_out'] ? \Illuminate\Support\Str::of($cell['last_out'])->limit(5, '') : '—' }}</div>
                                         <div class="mt-0.5 inline-block rounded px-1 font-medium" style="{{ $this->hoursStyle($cell['hours'], $row['min_full_day_hours']) }}">
-                                            {{ $cell['hours'] !== null ? number_format($cell['hours'], 2).'h' : '—' }}
+                                            {{ \App\Models\Attendance::formatHours($cell['hours']) ?? '—' }}
                                         </div>
                                     </div>
                                 @elseif ($cell['label'] !== '')

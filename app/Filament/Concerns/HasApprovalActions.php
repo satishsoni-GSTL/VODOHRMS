@@ -4,21 +4,38 @@ namespace App\Filament\Concerns;
 
 use App\Models\ApprovalAction;
 use App\Services\ApprovalWorkflowService;
+use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
-use Filament\Tables\Actions\Action;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\HtmlString;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Shared approve/reject/send-back row actions for any Filament resource whose model has
- * an `approvalInstance()` relation and implements App\Contracts\Approvable.
+ * Shared approve/reject/send-back actions for any Filament resource whose model has an
+ * `approvalInstance()` relation and implements App\Contracts\Approvable.
+ *
+ * - approvalActions()        row actions for the resource table (Tables\Actions\Action)
+ * - approvalHeaderActions()  the same three as page header actions (Actions\Action), for a
+ *                            ViewRecord page so approvers can act without going back to the list
  */
 trait HasApprovalActions
 {
     protected static function approvalActions(): array
+    {
+        return static::buildApprovalActions(\Filament\Tables\Actions\Action::class);
+    }
+
+    public static function approvalHeaderActions(): array
+    {
+        return static::buildApprovalActions(Action::class);
+    }
+
+    /**
+     * @param  class-string<\Filament\Tables\Actions\Action|Action>  $actionClass
+     */
+    private static function buildApprovalActions(string $actionClass): array
     {
         $canAct = fn (Model $record) => $record->approval_instance_id
             && app(ApprovalWorkflowService::class)->canUserActOnInstance($record->approvalInstance, auth()->user());
@@ -26,7 +43,7 @@ trait HasApprovalActions
         $modalContent = fn (Model $record) => static::approvalModalContent($record) ?? new HtmlString('');
 
         return [
-            Action::make('approve')
+            $actionClass::make('approve')
                 ->label('Approve')
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
@@ -36,7 +53,7 @@ trait HasApprovalActions
                 ->action(function (Model $record) {
                     static::actOnRecord($record, ApprovalAction::ACTION_APPROVE);
                 }),
-            Action::make('reject')
+            $actionClass::make('reject')
                 ->label('Reject')
                 ->icon('heroicon-o-x-circle')
                 ->color('danger')
@@ -46,7 +63,7 @@ trait HasApprovalActions
                 ->action(function (Model $record, array $data) {
                     static::actOnRecord($record, ApprovalAction::ACTION_REJECT, $data['remarks']);
                 }),
-            Action::make('send_back')
+            $actionClass::make('send_back')
                 ->label('Send Back')
                 ->icon('heroicon-o-arrow-uturn-left')
                 ->color('warning')

@@ -78,7 +78,7 @@ class ExpenseClaimResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('claim_number')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('employee.employee_code')->label('Code')->searchable(),
-                Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(),
+                Tables\Columns\TextColumn::make('employee.full_name')->label('Employee')->searchable(['first_name', 'middle_name', 'last_name']),
                 Tables\Columns\TextColumn::make('claim_date')->date()->sortable(),
                 Tables\Columns\TextColumn::make('total_requested_amount')->money('INR')->label('Requested'),
                 Tables\Columns\TextColumn::make('total_approved_amount')->money('INR')->label('Approved'),

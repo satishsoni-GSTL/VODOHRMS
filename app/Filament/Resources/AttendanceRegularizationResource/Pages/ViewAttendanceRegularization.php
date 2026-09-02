@@ -11,6 +11,11 @@ class ViewAttendanceRegularization extends ViewRecord
 {
     protected static string $resource = AttendanceRegularizationResource::class;
 
+    protected function getHeaderActions(): array
+    {
+        return AttendanceRegularizationResource::approvalHeaderActions();
+    }
+
     public function infolist(Infolist $infolist): Infolist
     {
         return $infolist->schema([

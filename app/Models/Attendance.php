@@ -81,4 +81,21 @@ class Attendance extends Model
     {
         return $this->hasDistinctPunches() ? $this->last_out : null;
     }
+
+    /**
+     * Render a decimal-hours value (e.g. 7.93) as "7h 56m" for display — the stored value
+     * stays decimal for arithmetic, this is purely for screens/reports. Null/blank in, null out.
+     */
+    public static function formatHours(int|float|string|null $hours): ?string
+    {
+        if ($hours === null || $hours === '') {
+            return null;
+        }
+
+        $totalMinutes = (int) round((float) $hours * 60);
+        $h = intdiv($totalMinutes, 60);
+        $m = $totalMinutes % 60;
+
+        return $m === 0 ? "{$h}h" : "{$h}h {$m}m";
+    }
 }

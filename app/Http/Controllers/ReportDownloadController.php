@@ -6,6 +6,8 @@ use App\Exports\Reports\AttendanceMonthlySummaryExport;
 use App\Exports\Reports\AttendanceRegisterExport;
 use App\Exports\Reports\AttendanceReportExport;
 use App\Exports\Reports\EmployeeMasterExport;
+use App\Exports\Reports\ExpenseDayWiseExport;
+use App\Exports\Reports\ExpenseMonthlySummaryExport;
 use App\Exports\Reports\ExpenseReportExport;
 use App\Exports\Reports\LeaveReportExport;
 use App\Exports\Reports\LoanReportExport;
@@ -28,12 +30,14 @@ class ReportDownloadController extends Controller
         'wfh' => 'attendance.view',
         'leave' => 'leave.view',
         'expense' => 'expense.view',
+        'expense_monthly_summary' => 'expense.view',
+        'expense_daywise' => 'expense.view',
         'payroll' => 'payroll.view',
         'loan' => 'loan.view',
         'payroll_expense_fy' => 'payroll.view',
     ];
 
-    private const TEAM_SCOPED_TYPES = ['attendance', 'attendance_monthly_summary', 'attendance_register', 'wfh', 'leave', 'expense', 'loan'];
+    private const TEAM_SCOPED_TYPES = ['attendance', 'attendance_monthly_summary', 'attendance_register', 'wfh', 'leave', 'expense', 'expense_monthly_summary', 'expense_daywise', 'loan'];
 
     public function __invoke(Request $request, string $type): BinaryFileResponse
     {
@@ -62,6 +66,8 @@ class ReportDownloadController extends Controller
             'wfh' => [new WfhReportExport($month, $user), "wfh-report-{$month}.xlsx"],
             'leave' => [new LeaveReportExport($month, $user), "leave-report-{$month}.xlsx"],
             'expense' => [new ExpenseReportExport($month, $user), "expense-report-{$month}.xlsx"],
+            'expense_monthly_summary' => [new ExpenseMonthlySummaryExport($month, $user), "expense-monthly-summary-{$month}.xlsx"],
+            'expense_daywise' => [new ExpenseDayWiseExport($month, (int) $request->query('employee'), $user), "expense-daywise-{$month}.xlsx"],
             'payroll' => [new PayrollReportExport($month), "payroll-report-{$month}.xlsx"],
             'loan' => [new LoanReportExport($user), 'loan-report.xlsx'],
             'payroll_expense_fy' => (function () use ($request) {
