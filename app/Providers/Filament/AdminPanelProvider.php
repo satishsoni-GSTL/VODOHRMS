@@ -49,7 +49,22 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
+            ])
+            // Menu order: self-service & daily-use groups first, configuration/admin last.
+            ->navigationGroups([
+                'Employees',
+                'Attendance',
+                'Leave',
+                'Payroll',
+                'Income Tax',
+                'Expenses',
+                'Loans & Advances',
+                'Onboarding',
+                'Exit Management',
+                'Organization',
+                'Policies',
+                'Notifications',
+                'Roles & Permissions',
             ])
             ->middleware([
                 EncryptCookies::class,

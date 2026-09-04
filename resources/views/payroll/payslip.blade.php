@@ -36,7 +36,9 @@
         </tr>
         <tr>
             <td><strong>Bank Account:</strong> {{ $maskedAccount }}</td>
-            <td><strong>Paid Days / LOP:</strong> {{ $runEmployee->paid_days }} / {{ $runEmployee->lop_days }}</td>
+            <td><strong>Paid Days / LOP:</strong> {{ $runEmployee->paid_days }} /
+                {{ $runEmployee->lop_days }}{{ $runEmployee->lop_amount > 0 ? ' (−₹'.number_format($runEmployee->lop_amount, 2).')' : '' }}
+            </td>
         </tr>
     </table>
 

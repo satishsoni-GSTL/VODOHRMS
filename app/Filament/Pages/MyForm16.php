@@ -19,6 +19,8 @@ class MyForm16 extends Page implements HasTable
 
     protected static ?string $navigationGroup = 'Income Tax';
 
+    protected static ?int $navigationSort = 0;
+
     protected static string $view = 'filament.pages.my-form16';
 
     public static function shouldRegisterNavigation(): bool

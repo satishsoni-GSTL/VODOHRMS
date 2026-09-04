@@ -18,7 +18,7 @@ class LeaveTypeResource extends Resource
 
     protected static ?string $navigationGroup = 'Leave';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
     {

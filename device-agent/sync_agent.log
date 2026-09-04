@@ -458,3 +458,30 @@ zk.exception.ZKNetworkError: can't reach device (ping 192.168.1.201)
 2026-09-02 11:53:33,501 [INFO] Found 52 new punch(es). Pushing to cloud in batches of 200.
 2026-09-02 11:53:34,180 [INFO] Batch 0-52: {'matched': 51, 'unmatched': 1, 'duplicate': 0, 'failed': 0}
 2026-09-02 11:53:34,181 [INFO] Sync complete. Cursor advanced to 2026-09-02 11:20:26.
+2026-09-03 13:01:34,772 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-09-03 13:01:35,446 [INFO] Found 52 new punch(es). Pushing to cloud in batches of 200.
+2026-09-03 13:01:43,544 [INFO] Batch 0-52: {'matched': 51, 'unmatched': 1, 'duplicate': 0, 'failed': 0}
+2026-09-03 13:01:43,547 [INFO] Sync complete. Cursor advanced to 2026-09-03 11:12:14.
+2026-09-03 13:40:12,559 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-09-03 13:40:45,603 [ERROR] Sync run failed
+Traceback (most recent call last):
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 248, in __send_command
+    self.__sock.send(top)
+    ~~~~~~~~~~~~~~~~^^^^^
+TimeoutError: timed out
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 147, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 113, in main
+    records = fetch_new_punches(config, since)
+  File "C:\Users\satis\OneDrive\Documents\Globalspace\VODOSFA V4\VODOHRMS\device-agent\essl_sync_agent.py", line 79, in fetch_new_punches
+    conn = zk.connect()
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 373, in connect
+    cmd_response = self.__send_command(const.CMD_CONNECT)
+  File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 260, in __send_command
+    raise ZKNetworkError(str(e))
+zk.exception.ZKNetworkError: timed out

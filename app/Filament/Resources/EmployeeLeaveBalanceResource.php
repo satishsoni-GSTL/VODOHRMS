@@ -20,7 +20,7 @@ class EmployeeLeaveBalanceResource extends Resource
 
     protected static ?string $navigationGroup = 'Leave';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 3;
 
     protected static ?string $navigationLabel = 'Leave Balances';
 

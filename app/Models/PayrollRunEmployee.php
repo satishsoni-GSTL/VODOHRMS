@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class PayrollRunEmployee extends Model
 {
     protected $fillable = [
-        'payroll_run_id', 'employee_id', 'salary_structure_id', 'paid_days', 'lop_days',
+        'payroll_run_id', 'employee_id', 'salary_structure_id', 'paid_days', 'lop_days', 'lop_amount',
         'gross_earnings', 'total_deductions', 'employer_contributions', 'net_pay', 'status',
     ];
 

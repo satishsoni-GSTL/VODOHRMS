@@ -20,6 +20,8 @@ class MyPayslips extends Page implements HasTable
 
     protected static ?string $navigationGroup = 'Payroll';
 
+    protected static ?int $navigationSort = 0;
+
     protected static string $view = 'filament.pages.my-payslips';
 
     public string $financialYear = '';
@@ -45,9 +47,19 @@ class MyPayslips extends Page implements HasTable
     public function table(Table $table): Table
     {
         return $table
-            ->query(fn () => Payslip::query()->where('employee_id', auth()->user()->employee_id))
+            ->query(fn () => Payslip::query()->with('payrollRunEmployee')->where('employee_id', auth()->user()->employee_id))
             ->columns([
                 Tables\Columns\TextColumn::make('payroll_month')->label('Month')->sortable(),
+                Tables\Columns\TextColumn::make('payrollRunEmployee.lop_days')
+                    ->label('LOP Days')
+                    ->badge()
+                    ->color(fn ($state) => $state > 0 ? 'danger' : 'gray')
+                    ->placeholder('0'),
+                Tables\Columns\TextColumn::make('payrollRunEmployee.lop_amount')
+                    ->label('LOP Amount')
+                    ->money('INR')
+                    ->color(fn ($state) => $state > 0 ? 'danger' : 'gray')
+                    ->placeholder('—'),
                 Tables\Columns\TextColumn::make('generated_at')->dateTime(),
             ])
             ->defaultSort('payroll_month', 'desc')

@@ -3,15 +3,19 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\EmployeeSalaryStructureResource\Pages;
+use App\Models\Employee;
 use App\Models\EmployeeSalaryStructure;
+use App\Models\PayrollRun;
 use App\Models\SalaryComponent;
 use App\Services\SalaryStructureService;
+use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\HtmlString;
 
 class EmployeeSalaryStructureResource extends Resource
 {
@@ -102,10 +106,28 @@ class EmployeeSalaryStructureResource extends Resource
                         Forms\Components\Placeholder::make('employee_display')
                             ->label('Employee')
                             ->content(fn (EmployeeSalaryStructure $record) => "{$record->employee->employee_code} - {$record->employee->full_name}"),
+                        Forms\Components\Toggle::make('backdate')
+                            ->label('Apply from an earlier (past) date')
+                            ->helperText('Off: the revision applies from today onward and never touches a month already run. On: pick any date after the current structure started — recalculate/raise arrears for any affected month.')
+                            ->default(false)
+                            ->live()
+                            ->columnSpanFull(),
                         Forms\Components\DatePicker::make('effective_from')
                             ->default(now())
                             ->required()
-                            ->minDate(fn (EmployeeSalaryStructure $record) => $record->effective_from->copy()->addDay()),
+                            ->live(onBlur: true)
+                            ->minDate(fn (Forms\Get $get, EmployeeSalaryStructure $record) => $get('backdate')
+                                ? $record->effective_from->copy()->addDay()
+                                : now()->startOfDay())
+                            ->helperText(fn (Forms\Get $get, EmployeeSalaryStructure $record) => $get('backdate')
+                                ? 'Must be after '.$record->effective_from->toDateString().' (current structure start).'
+                                : null),
+                        Forms\Components\Placeholder::make('backdate_warning')
+                            ->hiddenLabel()
+                            ->columnSpanFull()
+                            ->visible(fn (Forms\Get $get, EmployeeSalaryStructure $record) => filled($get('effective_from'))
+                                && static::finalizedMonthWarning($get('effective_from'), $record->employee) !== null)
+                            ->content(fn (Forms\Get $get, EmployeeSalaryStructure $record) => static::finalizedMonthWarning($get('effective_from'), $record->employee)),
                         Forms\Components\TextInput::make('annual_ctc')
                             ->numeric()
                             ->required()
@@ -185,6 +207,35 @@ class EmployeeSalaryStructureResource extends Resource
                     }),
             ])
             ->bulkActions([]);
+    }
+
+    /**
+     * Warns when the chosen effective month already has a finalized/locked payroll run for
+     * the employee's company — a backdated structure will not rewrite that payslip.
+     */
+    public static function finalizedMonthWarning(?string $date, ?Employee $employee): ?HtmlString
+    {
+        if (blank($date) || ! $employee) {
+            return null;
+        }
+
+        $month = Carbon::parse($date)->format('Y-m');
+
+        $exists = PayrollRun::query()
+            ->where('company_id', $employee->company_id)
+            ->where('payroll_month', $month)
+            ->whereIn('status', [PayrollRun::STATUS_FINALIZED, PayrollRun::STATUS_LOCKED])
+            ->exists();
+
+        if (! $exists) {
+            return null;
+        }
+
+        return new HtmlString(
+            '<span class="text-warning-600 dark:text-warning-400 text-sm">⚠ Payroll for '.$month
+            .' is already finalized. This backdated structure will not change that payslip — raise an '
+            .'<strong>Arrears</strong> payroll input for the difference.</span>'
+        );
     }
 
     public static function getPages(): array

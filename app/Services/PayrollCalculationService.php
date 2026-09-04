@@ -9,6 +9,7 @@ use App\Models\Holiday;
 use App\Models\LeaveApplication;
 use App\Models\PayrollInput;
 use App\Models\PayrollRun;
+use App\Models\PayrollRunDeductionException;
 use App\Models\PayrollRunEmployee;
 use App\Models\SalaryComponent;
 use App\Models\User;
@@ -33,6 +34,7 @@ class PayrollCalculationService
         private readonly IncomeTaxCalculationService $incomeTax,
         private readonly LoanService $loans,
         private readonly AuditLogService $auditLog,
+        private readonly PrePayrollDeductionService $deductionExceptions,
     ) {}
 
     public function getOrCreateRun(string $payrollMonth, int $companyId): PayrollRun
@@ -60,17 +62,25 @@ class PayrollCalculationService
             ->whereIn('status', [Employee::STATUS_ACTIVE, Employee::STATUS_PROBATION, Employee::STATUS_NOTICE_PERIOD])
             ->get();
 
-        DB::transaction(function () use ($run, $employees) {
+        $waived = $this->deductionExceptions->waivedKeySet($run);
+
+        DB::transaction(function () use ($run, $employees, $waived) {
             foreach ($employees as $employee) {
-                $this->calculateForEmployee($run, $employee);
+                $this->calculateForEmployee($run, $employee, $waived);
             }
 
             $run->update(['status' => PayrollRun::STATUS_CALCULATED]);
         });
     }
 
-    public function calculateForEmployee(PayrollRun $run, Employee $employee): PayrollRunEmployee
+    /**
+     * @param  array<string, true>|null  $waived  Deduction-exception key set for this run;
+     *                                            resolved from PrePayrollDeductionService when null.
+     */
+    public function calculateForEmployee(PayrollRun $run, Employee $employee, ?array $waived = null): PayrollRunEmployee
     {
+        $waived ??= $this->deductionExceptions->waivedKeySet($run);
+
         $monthStart = Carbon::createFromFormat('Y-m', $run->payroll_month)->startOfMonth();
         $monthEnd = (clone $monthStart)->endOfMonth();
         $totalDaysInMonth = $monthStart->daysInMonth;
@@ -102,13 +112,25 @@ class PayrollCalculationService
         $grossEarnings = 0.0;
         $totalDeductions = 0.0;
         $employerContributions = 0.0;
+        $fullMonthProratable = 0.0;
 
         if ($structure) {
             foreach ($structure->lines()->with('component')->get() as $line) {
                 $component = $line->component;
+
+                // A deduction HR has waived for this run only — skip it entirely.
+                if ($component->type === SalaryComponent::TYPE_DEDUCTION
+                    && $this->deductionIsWaived($waived, $component, $line->id)) {
+                    continue;
+                }
+
                 $amount = $component->is_prorated
                     ? round((float) $line->monthly_amount * $prorationFactor, 2)
                     : (float) $line->monthly_amount;
+
+                if ($component->type === SalaryComponent::TYPE_EARNING && $component->is_prorated) {
+                    $fullMonthProratable += (float) $line->monthly_amount;
+                }
 
                 $runEmployee->lines()->create([
                     'salary_component_id' => $component->id,
@@ -126,9 +148,17 @@ class PayrollCalculationService
             }
         }
 
+        $lopAmount = round($fullMonthProratable * (1 - $prorationFactor), 2);
+
         foreach (PayrollInput::where('employee_id', $employee->id)->where('payroll_month', $run->payroll_month)->get() as $input) {
             $amount = (float) $input->amount;
             $isEarning = in_array($input->type, PayrollInput::EARNING_TYPES, true);
+
+            if (! $isEarning && isset($waived[PayrollRunDeductionException::keyFor(
+                PayrollRunDeductionException::SOURCE_PAYROLL_INPUT, $input->id, null
+            )])) {
+                continue;
+            }
 
             $runEmployee->lines()->create([
                 'salary_component_id' => null,
@@ -150,7 +180,11 @@ class PayrollCalculationService
 
         $financialYear = $this->incomeTax->financialYearForMonth($run->payroll_month);
 
-        if ($financialYear) {
+        $tdsWaived = isset($waived[PayrollRunDeductionException::keyFor(
+            PayrollRunDeductionException::SOURCE_STATUTORY, null, PrePayrollDeductionService::TDS_CODE
+        )]);
+
+        if ($financialYear && ! $tdsWaived) {
             $tds = $this->incomeTax->monthlyTdsForPayroll($employee, $financialYear, $run->payroll_month);
 
             if ($tds > 0) {
@@ -177,12 +211,32 @@ class PayrollCalculationService
         }
 
         $runEmployee->update([
+            'lop_amount' => $lopAmount,
             'total_deductions' => round($totalDeductions, 2),
             'employer_contributions' => round($employerContributions, 2),
             'net_pay' => round($grossEarnings - $totalDeductions, 2),
         ]);
 
         return $runEmployee->fresh('lines');
+    }
+
+    /**
+     * Whether a salary-structure deduction line is waived for this run — statutory
+     * components are keyed by code (survives a mid-month revision), the rest by line id.
+     *
+     * @param  array<string, true>  $waived
+     */
+    private function deductionIsWaived(array $waived, SalaryComponent $component, int $lineId): bool
+    {
+        if (PrePayrollDeductionService::isStatutoryCode($component->code)) {
+            return isset($waived[PayrollRunDeductionException::keyFor(
+                PayrollRunDeductionException::SOURCE_STATUTORY, null, strtoupper((string) $component->code)
+            )]);
+        }
+
+        return isset($waived[PayrollRunDeductionException::keyFor(
+            PayrollRunDeductionException::SOURCE_STRUCTURE_LINE, $lineId, null
+        )]);
     }
 
     /**

@@ -14,6 +14,8 @@ class MyTaxComparison extends Page
 
     protected static ?string $navigationGroup = 'Income Tax';
 
+    protected static ?int $navigationSort = 1;
+
     protected static string $view = 'filament.pages.my-tax-comparison';
 
     public ?array $comparison = null;

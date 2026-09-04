@@ -51,6 +51,11 @@ class PayrollRun extends Model
         return $this->hasMany(PayrollRunEmployee::class);
     }
 
+    public function deductionExceptions(): HasMany
+    {
+        return $this->hasMany(PayrollRunDeductionException::class);
+    }
+
     public function isEditable(): bool
     {
         return ! in_array($this->status, [self::STATUS_FINALIZED, self::STATUS_LOCKED], true);
