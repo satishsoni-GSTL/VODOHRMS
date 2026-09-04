@@ -27,6 +27,13 @@ class ResetPasswordWithOtp extends BaseResetPassword
 {
     private const MAX_ATTEMPTS = 5;
 
+    /**
+     * The base ResetPassword page binds its form fields to top-level Livewire properties
+     * (not a `data` state path), so the extra OTP field needs its own backing property —
+     * without it Livewire throws "No property found for validation: [otp]" on submit.
+     */
+    public ?string $otp = '';
+
     public function mount(?string $email = null, ?string $token = null): void
     {
         if (Filament::auth()->check()) {

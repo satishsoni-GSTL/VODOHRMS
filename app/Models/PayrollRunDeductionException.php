@@ -47,14 +47,17 @@ class PayrollRunDeductionException extends Model
     /**
      * Stable key identifying the deduction this exception waives, matched against the
      * same key built in PayrollCalculationService / PrePayrollDeductionService.
+     *
+     * The employee id is part of the key on purpose: a waiver applies to that one
+     * employee only, never to everyone sharing the same statutory component code.
      */
-    public static function keyFor(string $sourceType, ?int $sourceId, ?string $componentCode): string
+    public static function keyFor(int $employeeId, string $sourceType, ?int $sourceId, ?string $componentCode): string
     {
-        return $sourceType.'|'.($sourceId ?? '').'|'.strtoupper($componentCode ?? '');
+        return $employeeId.'|'.$sourceType.'|'.($sourceId ?? '').'|'.strtoupper($componentCode ?? '');
     }
 
     public function key(): string
     {
-        return self::keyFor($this->source_type, $this->source_id, $this->component_code);
+        return self::keyFor($this->employee_id, $this->source_type, $this->source_id, $this->component_code);
     }
 }

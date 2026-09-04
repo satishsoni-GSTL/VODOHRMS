@@ -111,4 +111,50 @@ class SelfServicePasswordTest extends TestCase
 
         $this->get($path)->assertStatus(200)->assertSee('6-Digit Code');
     }
+
+    public function test_submitting_a_valid_otp_resets_the_password(): void
+    {
+        $user = $this->makeUser('SSP004');
+        $otp = '112233';
+
+        DB::table('password_reset_tokens')->updateOrInsert(
+            ['email' => $user->email],
+            ['token' => Hash::make($otp), 'attempts' => 0, 'expires_at' => now()->addMinutes(10), 'created_at' => now()],
+        );
+
+        \Livewire\Livewire::test(\App\Filament\Pages\Auth\ResetPasswordWithOtp::class, [
+            'email' => $user->email,
+            'token' => Str::random(20),
+        ])
+            ->set('otp', $otp)
+            ->set('password', 'brand-new-password')
+            ->set('passwordConfirmation', 'brand-new-password')
+            ->call('resetPassword')
+            ->assertHasNoErrors();
+
+        $this->assertTrue(Hash::check('brand-new-password', $user->fresh()->password));
+        $this->assertDatabaseMissing('password_reset_tokens', ['email' => $user->email]);
+    }
+
+    public function test_submitting_a_wrong_otp_does_not_reset_and_counts_an_attempt(): void
+    {
+        $user = $this->makeUser('SSP005');
+
+        DB::table('password_reset_tokens')->updateOrInsert(
+            ['email' => $user->email],
+            ['token' => Hash::make('445566'), 'attempts' => 0, 'expires_at' => now()->addMinutes(10), 'created_at' => now()],
+        );
+
+        \Livewire\Livewire::test(\App\Filament\Pages\Auth\ResetPasswordWithOtp::class, [
+            'email' => $user->email,
+            'token' => Str::random(20),
+        ])
+            ->set('otp', '000000')
+            ->set('password', 'brand-new-password')
+            ->set('passwordConfirmation', 'brand-new-password')
+            ->call('resetPassword');
+
+        $this->assertTrue(Hash::check('old-password', $user->fresh()->password));
+        $this->assertSame(1, (int) DB::table('password_reset_tokens')->where('email', $user->email)->value('attempts'));
+    }
 }

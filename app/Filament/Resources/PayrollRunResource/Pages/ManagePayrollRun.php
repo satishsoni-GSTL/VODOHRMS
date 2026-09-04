@@ -57,6 +57,17 @@ class ManagePayrollRun extends ViewRecord implements HasTable
                     ->query(fn ($query) => $query->where('lop_days', '>', 0)),
             ])
             ->actions([
+                Tables\Actions\Action::make('recalculateEmployee')
+                    ->label('Recalculate')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalDescription('Recompute only this employee for the run — use after correcting their attendance, salary, deductions or a TDS adjustment. Does not touch anyone else.')
+                    ->visible(fn () => $this->record->isEditable() && auth()->user()->can('payroll.process'))
+                    ->action(function (PayrollRunEmployee $record) {
+                        app(PayrollCalculationService::class)->calculateForEmployee($this->record, $record->employee);
+                        Notification::make()->title('Employee recalculated')->success()->send();
+                    }),
                 Tables\Actions\Action::make('generatePayslip')
                     ->label('Generate Payslip')
                     ->icon('heroicon-o-document-arrow-down')

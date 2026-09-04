@@ -158,12 +158,12 @@ class PrePayrollDeductionService
     {
         return $run->deductionExceptions()->updateOrCreate(
             [
+                'employee_id' => $row['employee_id'],
                 'source_type' => $row['source_type'],
                 'source_id' => $row['source_id'],
                 'component_code' => $row['component_code'],
             ],
             [
-                'employee_id' => $row['employee_id'],
                 'label' => $row['label'],
                 'amount' => $row['amount'],
                 'reason' => $reason,
@@ -190,7 +190,7 @@ class PrePayrollDeductionService
         float $amount,
         Collection $exceptions,
     ): array {
-        $key = PayrollRunDeductionException::keyFor($sourceType, $sourceId, $componentCode);
+        $key = PayrollRunDeductionException::keyFor($employee->id, $sourceType, $sourceId, $componentCode);
 
         return [
             'key' => $key,

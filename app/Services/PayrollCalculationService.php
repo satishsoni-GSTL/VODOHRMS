@@ -120,7 +120,7 @@ class PayrollCalculationService
 
                 // A deduction HR has waived for this run only — skip it entirely.
                 if ($component->type === SalaryComponent::TYPE_DEDUCTION
-                    && $this->deductionIsWaived($waived, $component, $line->id)) {
+                    && $this->deductionIsWaived($waived, $employee->id, $component, $line->id)) {
                     continue;
                 }
 
@@ -155,7 +155,7 @@ class PayrollCalculationService
             $isEarning = in_array($input->type, PayrollInput::EARNING_TYPES, true);
 
             if (! $isEarning && isset($waived[PayrollRunDeductionException::keyFor(
-                PayrollRunDeductionException::SOURCE_PAYROLL_INPUT, $input->id, null
+                $employee->id, PayrollRunDeductionException::SOURCE_PAYROLL_INPUT, $input->id, null
             )])) {
                 continue;
             }
@@ -181,7 +181,7 @@ class PayrollCalculationService
         $financialYear = $this->incomeTax->financialYearForMonth($run->payroll_month);
 
         $tdsWaived = isset($waived[PayrollRunDeductionException::keyFor(
-            PayrollRunDeductionException::SOURCE_STATUTORY, null, PrePayrollDeductionService::TDS_CODE
+            $employee->id, PayrollRunDeductionException::SOURCE_STATUTORY, null, PrePayrollDeductionService::TDS_CODE
         )]);
 
         if ($financialYear && ! $tdsWaived) {
@@ -226,16 +226,16 @@ class PayrollCalculationService
      *
      * @param  array<string, true>  $waived
      */
-    private function deductionIsWaived(array $waived, SalaryComponent $component, int $lineId): bool
+    private function deductionIsWaived(array $waived, int $employeeId, SalaryComponent $component, int $lineId): bool
     {
         if (PrePayrollDeductionService::isStatutoryCode($component->code)) {
             return isset($waived[PayrollRunDeductionException::keyFor(
-                PayrollRunDeductionException::SOURCE_STATUTORY, null, strtoupper((string) $component->code)
+                $employeeId, PayrollRunDeductionException::SOURCE_STATUTORY, null, strtoupper((string) $component->code)
             )]);
         }
 
         return isset($waived[PayrollRunDeductionException::keyFor(
-            PayrollRunDeductionException::SOURCE_STRUCTURE_LINE, $lineId, null
+            $employeeId, PayrollRunDeductionException::SOURCE_STRUCTURE_LINE, $lineId, null
         )]);
     }
 

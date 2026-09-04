@@ -7,6 +7,7 @@ use App\Models\EmployeeTaxDeclaration;
 use App\Models\EmployeeTaxProjection;
 use App\Models\FinancialYear;
 use App\Models\FullFinalSettlement;
+use App\Models\PayrollRun;
 use App\Models\PayrollRunEmployee;
 use App\Models\PayrollRunEmployeeLine;
 use App\Models\TaxRegimeConfig;
@@ -153,10 +154,16 @@ class IncomeTaxCalculationService
     {
         $fyMonths = $this->financialYearMonths($financialYear);
 
+        // Only TDS from runs that were actually finalized/locked counts as "already
+        // deducted". A draft/calculated (or reopened) run is provisional — its TDS line
+        // has not hit a payslip, so treating it as deducted would understate the tax
+        // still to withhold and show phantom deductions in the tax comparison.
         $runEmployeeIds = PayrollRunEmployee::query()
             ->where('employee_id', $employee->id)
             ->whereHas('payrollRun', function ($q) use ($fyMonths, $payrollMonth) {
-                $q->whereIn('payroll_month', $fyMonths)->where('payroll_month', '<=', $payrollMonth);
+                $q->whereIn('payroll_month', $fyMonths)
+                    ->where('payroll_month', '<=', $payrollMonth)
+                    ->whereIn('status', [PayrollRun::STATUS_FINALIZED, PayrollRun::STATUS_LOCKED]);
             })
             ->pluck('id');
 

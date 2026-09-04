@@ -29,6 +29,7 @@ class PrePayrollDeductionExceptionTest extends TestCase
         $this->seed(Phase2Seeder::class);
         $this->seed(Phase3Seeder::class);
         $this->seed(Phase4Seeder::class);
+        $this->seed(\Database\Seeders\Phase5Seeder::class);
     }
 
     private function makeEmployee(string $code, Company $company): Employee
@@ -127,6 +128,101 @@ class PrePayrollDeductionExceptionTest extends TestCase
         // Underlying records are untouched — next month still has them.
         $this->assertDatabaseHas('employee_salary_structure_lines', ['id' => $recoveryLine->id]);
         $this->assertDatabaseHas('payroll_inputs', ['employee_id' => $employee->id, 'amount' => 700]);
+    }
+
+    public function test_a_waiver_applies_to_one_employee_only_not_everyone(): void
+    {
+        $company = Company::firstOrCreate(['code' => 'HO'], ['name' => 'Head Office', 'is_active' => true]);
+        $basic = SalaryComponent::where('code', 'BASIC')->firstOrFail();
+        $pf = SalaryComponent::where('code', 'PF_EMPLOYEE')->firstOrFail();
+
+        $waived = $this->makeEmployee('WVR100', $company);
+        $kept = $this->makeEmployee('WVR101', $company);
+
+        $month = now()->subMonth()->format('Y-m');
+
+        foreach ([$waived, $kept] as $emp) {
+            app(SalaryStructureService::class)->assign(
+                $emp,
+                now()->subMonths(3)->startOfMonth()->toDateString(),
+                360000,
+                [$basic->id => 20000],
+            );
+        }
+
+        $run = PayrollRun::create([
+            'payroll_month' => $month,
+            'company_id' => $company->id,
+            'status' => PayrollRun::STATUS_DRAFT,
+        ]);
+
+        $calc = app(PayrollCalculationService::class);
+        $calc->calculate($run);
+
+        $service = app(PrePayrollDeductionService::class);
+        $rows = $service->rows($run->fresh());
+        $pfRowForWaived = $rows->first(
+            fn ($r) => $r['employee_id'] === $waived->id && $r['component_code'] === 'PF_EMPLOYEE'
+        );
+        $this->assertNotNull($pfRowForWaived, 'PF row for the target employee should exist');
+
+        $service->grantException($run, $pfRowForWaived, $waived->user, 'Special case for this employee');
+
+        $calc->calculate($run->fresh());
+
+        $waivedRow = $run->employees()->where('employee_id', $waived->id)->firstOrFail();
+        $keptRow = $run->employees()->where('employee_id', $kept->id)->firstOrFail();
+
+        $this->assertSame(0, $waivedRow->lines()->where('salary_component_id', $pf->id)->count());
+        $this->assertSame(1, $keptRow->lines()->where('salary_component_id', $pf->id)->count());
+        $this->assertGreaterThan(0, (float) $keptRow->lines()->where('salary_component_id', $pf->id)->sum('amount'));
+    }
+
+    public function test_tds_only_counts_as_deducted_once_the_run_is_finalized(): void
+    {
+        $company = Company::firstOrCreate(['code' => 'HO'], ['name' => 'Head Office', 'is_active' => true]);
+        $basic = SalaryComponent::where('code', 'BASIC')->firstOrFail();
+        $fy = \App\Models\FinancialYear::query()->where('is_active', true)->first();
+
+        if (! $fy) {
+            $this->markTestSkipped('No active financial year seeded.');
+        }
+
+        $month = $this->taxServiceableMonth($fy);
+        $employee = $this->makeEmployee('TDS100', $company);
+
+        app(SalaryStructureService::class)->assign(
+            $employee,
+            \Carbon\Carbon::createFromFormat('Y-m', $month)->startOfMonth()->subMonth()->toDateString(),
+            2400000, // high CTC so TDS is non-zero
+            [$basic->id => 200000],
+        );
+
+        $run = PayrollRun::create([
+            'payroll_month' => $month,
+            'company_id' => $company->id,
+            'status' => PayrollRun::STATUS_DRAFT,
+        ]);
+
+        $tax = app(\App\Services\IncomeTaxCalculationService::class);
+        $ref = new \ReflectionMethod($tax, 'tdsDeductedTillDate');
+        $ref->setAccessible(true);
+
+        app(PayrollCalculationService::class)->calculate($run);
+        $this->assertGreaterThan(0, (float) $run->fresh()->employees()->where('employee_id', $employee->id)
+            ->firstOrFail()->lines()->where('label', \App\Services\IncomeTaxCalculationService::TDS_LABEL)->sum('amount'));
+
+        // Draft run: nothing counts as already deducted.
+        $this->assertEqualsWithDelta(0.0, $ref->invoke($tax, $employee->fresh(), $fy, $month), 0.01);
+
+        // Finalize -> now it counts.
+        app(PayrollCalculationService::class)->finalize($run->fresh());
+        $this->assertGreaterThan(0.0, $ref->invoke($tax, $employee->fresh(), $fy, $month));
+    }
+
+    private function taxServiceableMonth(\App\Models\FinancialYear $fy): string
+    {
+        return \Carbon\Carbon::parse($fy->start_date)->format('Y-m');
     }
 
     public function test_lop_amount_is_zero_when_fully_paid_and_positive_with_lop(): void
