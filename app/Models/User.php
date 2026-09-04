@@ -39,7 +39,6 @@ class User extends Authenticatable implements FilamentUser
             'must_change_password' => 'boolean',
             'is_active' => 'boolean',
             'last_login_at' => 'datetime',
-            'locked_until' => 'datetime',
         ];
     }
 

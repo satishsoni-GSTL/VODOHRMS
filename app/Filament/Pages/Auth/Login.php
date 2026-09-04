@@ -15,9 +15,12 @@ use Illuminate\Validation\ValidationException;
 
 class Login extends BaseLogin
 {
+    /**
+     * Transient per-minute throttle only (Filament's built-in brute-force guard, clears
+     * after 60s). There is deliberately no persistent account lockout — a wrong password
+     * never locks the account.
+     */
     private const MAX_ATTEMPTS = 5;
-
-    private const LOCK_MINUTES = 15;
 
     protected function getEmailFormComponent(): Component
     {
@@ -47,11 +50,6 @@ class Login extends BaseLogin
             ->orWhere('employee_code', $identifier)
             ->first();
 
-        if ($user && $user->locked_until && $user->locked_until->isFuture()) {
-            $this->logAttempt($user, $identifier, 'locked');
-            $this->throwFailureValidationException('This account is temporarily locked due to repeated failed logins. Try again later.');
-        }
-
         if ($user && ! $user->is_active) {
             $this->logAttempt($user, $identifier, 'inactive');
             $this->throwFailureValidationException('This account is inactive. Contact your HR administrator.');
@@ -63,14 +61,6 @@ class Login extends BaseLogin
         ];
 
         if (! Filament::auth()->attempt($credentials, $data['remember'] ?? false)) {
-            if ($user) {
-                $user->increment('failed_login_attempts');
-
-                if ($user->failed_login_attempts >= self::MAX_ATTEMPTS) {
-                    $user->forceFill(['locked_until' => now()->addMinutes(self::LOCK_MINUTES)])->save();
-                }
-            }
-
             $this->logAttempt($user, $identifier, 'invalid_credentials');
             $this->throwFailureValidationException('These credentials do not match our records.');
         }
@@ -87,8 +77,6 @@ class Login extends BaseLogin
         }
 
         $authenticatedUser->forceFill([
-            'failed_login_attempts' => 0,
-            'locked_until' => null,
             'last_login_at' => now(),
             'last_login_ip' => request()->ip(),
         ])->save();
