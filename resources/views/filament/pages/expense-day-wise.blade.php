@@ -1,8 +1,10 @@
 @php
     use App\Models\ExpenseClaim;
 
-    $requestedTotal = $lines->sum('requested_amount');
-    $approvedTotal = $lines->sum(fn ($line) => $line['approved_amount'] ?? 0);
+    // Rejected / sent-back lines stay listed for reference but don't count toward the totals.
+    $counting = $lines->where('counts', true);
+    $requestedTotal = $counting->sum('requested_amount');
+    $approvedTotal = $counting->sum(fn ($line) => $line['approved_amount'] ?? 0);
 @endphp
 
 <div class="space-y-4">
@@ -37,7 +39,7 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                     @foreach ($lines as $line)
-                        <tr>
+                        <tr @class(['text-gray-400 line-through dark:text-gray-500' => ! $line['counts']])>
                             <td class="whitespace-nowrap px-3 py-2 tabular-nums">{{ \Illuminate\Support\Carbon::parse($line['date'])->format('d M Y') }}</td>
                             <td class="whitespace-nowrap px-3 py-2">{{ $line['category'] }}</td>
                             <td class="px-3 py-2">{{ $line['description'] ?: '—' }}</td>
@@ -61,5 +63,9 @@
                 </tfoot>
             </table>
         </div>
+
+        @if ($counting->count() !== $lines->count())
+            <p class="text-xs text-gray-500 dark:text-gray-400">Struck-through lines belong to rejected or sent-back claims and are not included in the totals.</p>
+        @endif
     @endif
 </div>

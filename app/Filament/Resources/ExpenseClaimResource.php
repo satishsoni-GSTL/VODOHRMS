@@ -41,7 +41,7 @@ class ExpenseClaimResource extends Resource
                     ->preload()
                     ->required()
                     ->default(fn () => auth()->user()->employee_id)
-                    ->disabled(fn () => ! auth()->user()->can('expense.manage'))
+                    ->disabled(fn (string $operation) => $operation === 'edit' || ! auth()->user()->can('expense.manage'))
                     ->dehydrated(),
                 Forms\Components\DatePicker::make('claim_date')->default(now())->required(),
                 Forms\Components\TextInput::make('project_client')->maxLength(150),
@@ -99,6 +99,8 @@ class ExpenseClaimResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make()
                     ->extraModalFooterActions(fn () => static::approvalActions()),
+                Tables\Actions\EditAction::make()
+                    ->label('Edit & Resubmit'),
                 ...static::approvalActions(),
                 Tables\Actions\Action::make('recordPayment')
                     ->label('Record Payment')
@@ -124,6 +126,15 @@ class ExpenseClaimResource extends Resource
             ->bulkActions([]);
     }
 
+    /**
+     * Only a sent-back claim is editable (by its claimant or an expense manager);
+     * saving it resubmits it for approval. See Pages\EditExpenseClaim.
+     */
+    public static function canEdit(Model $record): bool
+    {
+        return $record instanceof ExpenseClaim && $record->isEditableBy(auth()->user());
+    }
+
     public static function getEloquentQuery(): Builder
     {
         return ScopesToOwnTeam::apply(parent::getEloquentQuery(), auth()->user(), 'expense.view');
@@ -146,6 +157,7 @@ class ExpenseClaimResource extends Resource
             'index' => Pages\ListExpenseClaims::route('/'),
             'create' => Pages\CreateExpenseClaim::route('/create'),
             'view' => Pages\ViewExpenseClaim::route('/{record}'),
+            'edit' => Pages\EditExpenseClaim::route('/{record}/edit'),
         ];
     }
 }

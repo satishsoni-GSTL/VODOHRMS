@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Employee;
 use App\Models\ExpenseCategory;
+use App\Models\ExpenseClaim;
 use App\Models\ExpenseClaimLine;
 use App\Models\User;
 use Carbon\Carbon;
@@ -19,6 +20,8 @@ use Illuminate\Support\Collection;
  *                 date. Powers the "View" drill-down modal and ExpenseDayWiseExport.
  *
  * Amounts are the claimed (requested) amounts, matching the existing Expense report.
+ * Rejected and sent-back claims (ExpenseClaim::NON_COUNTING_STATUSES) are left out of
+ * the summary totals; dayWise() still lists their lines, flagged with counts = false.
  * Visibility follows App\Filament\Concerns\ScopesToOwnTeam: holders of `expense.view`
  * see everyone, a manager sees their own team, anyone else sees only themselves.
  */
@@ -44,6 +47,7 @@ class ExpenseMonthlySummaryService
         $grouped = ExpenseClaimLine::query()
             ->join('expense_claims', 'expense_claims.id', '=', 'expense_claim_lines.expense_claim_id')
             ->whereBetween('expense_claim_lines.expense_date', [$start->toDateString(), $end->toDateString()])
+            ->whereNotIn('expense_claims.status', ExpenseClaim::NON_COUNTING_STATUSES)
             ->when($visibleIds !== null, fn ($q) => $q->whereIn('expense_claims.employee_id', $visibleIds))
             ->groupBy('expense_claims.employee_id', 'expense_claim_lines.category_id')
             ->selectRaw('expense_claims.employee_id, expense_claim_lines.category_id, SUM(expense_claim_lines.requested_amount) AS amount')
@@ -107,7 +111,7 @@ class ExpenseMonthlySummaryService
      * Per-line detail for one employee in the month, oldest first.
      * Returns an empty collection when the employee is outside the user's scope.
      *
-     * @return Collection<int, array{date:string, category:string, description:?string, vendor:?string, bill_number:?string, payment_mode:?string, requested_amount:float, approved_amount:?float, claim_number:string, status:string}>
+     * @return Collection<int, array{date:string, category:string, description:?string, vendor:?string, bill_number:?string, payment_mode:?string, requested_amount:float, approved_amount:?float, claim_number:string, status:string, counts:bool}>
      */
     public function dayWise(string $month, int $employeeId, User $user): Collection
     {
@@ -149,6 +153,7 @@ class ExpenseMonthlySummaryService
                 'approved_amount' => $line->approved_amount === null ? null : (float) $line->approved_amount,
                 'claim_number' => (string) $line->claim_number,
                 'status' => (string) $line->status,
+                'counts' => ! in_array($line->status, ExpenseClaim::NON_COUNTING_STATUSES, true),
             ]);
     }
 

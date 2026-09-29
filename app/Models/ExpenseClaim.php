@@ -47,6 +47,16 @@ class ExpenseClaim extends Model implements Approvable
         self::STATUS_PAID => 'Paid',
     ];
 
+    /**
+     * Claims in these statuses are not a real spend: rejected claims are dead, and
+     * sent-back claims are with the employee for correction (they count again once
+     * resubmitted). Excluded from every "actual expense" total.
+     */
+    public const NON_COUNTING_STATUSES = [
+        self::STATUS_REJECTED,
+        self::STATUS_SENT_BACK,
+    ];
+
     protected $fillable = [
         'claim_number', 'employee_id', 'claim_date', 'project_client', 'status',
         'approval_instance_id', 'total_requested_amount', 'total_approved_amount',
@@ -75,6 +85,24 @@ class ExpenseClaim extends Model implements Approvable
     public function approvalInstance(): BelongsTo
     {
         return $this->belongsTo(ApprovalInstance::class);
+    }
+
+    public function countsTowardExpense(): bool
+    {
+        return ! in_array($this->status, self::NON_COUNTING_STATUSES, true);
+    }
+
+    /**
+     * A sent-back claim can be corrected and resubmitted by the claimant, or by
+     * anyone who manages expenses on their behalf.
+     */
+    public function isEditableBy(?User $user): bool
+    {
+        if (! $user || $this->status !== self::STATUS_SENT_BACK) {
+            return false;
+        }
+
+        return $user->employee_id === $this->employee_id || $user->can('expense.manage');
     }
 
     public function recalculateTotals(): void

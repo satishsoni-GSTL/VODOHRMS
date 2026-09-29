@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\ExpenseClaimResource\Pages;
 
 use App\Filament\Resources\ExpenseClaimResource;
+use Filament\Actions;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
@@ -14,7 +15,10 @@ class ViewExpenseClaim extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        return ExpenseClaimResource::approvalHeaderActions();
+        return [
+            Actions\EditAction::make()->label('Edit & Resubmit'),
+            ...ExpenseClaimResource::approvalHeaderActions(),
+        ];
     }
 
     public function infolist(Infolist $infolist): Infolist

@@ -43,6 +43,45 @@ class ExpenseClaimService
         });
     }
 
+    /**
+     * Correct a sent-back claim and route it through the approval workflow again from
+     * level 1. Lines are replaced wholesale (any partial approved amounts from the earlier
+     * round are dropped); the previous approval instance stays as history.
+     *
+     * @param  array<int, array{category_id:int, expense_date:string, requested_amount:float, description?:string, vendor?:string, bill_number?:string, payment_mode?:string, receipt_path?:string}>  $lines
+     */
+    public function resubmit(ExpenseClaim $claim, string $claimDate, ?string $projectClient, array $lines): ExpenseClaim
+    {
+        if ($claim->status !== ExpenseClaim::STATUS_SENT_BACK) {
+            throw ValidationException::withMessages(['status' => 'Only sent-back claims can be edited and resubmitted.']);
+        }
+
+        if ($lines === []) {
+            throw ValidationException::withMessages(['lines' => 'At least one expense line is required.']);
+        }
+
+        return DB::transaction(function () use ($claim, $claimDate, $projectClient, $lines) {
+            $claim->update([
+                'claim_date' => $claimDate,
+                'project_client' => $projectClient,
+            ]);
+
+            $claim->lines()->delete();
+
+            foreach ($lines as $line) {
+                unset($line['id'], $line['expense_claim_id'], $line['approved_amount']);
+                $claim->lines()->create($line);
+            }
+
+            $claim->recalculateTotals();
+            $claim->save();
+
+            $this->workflow->submit($claim);
+
+            return $claim->fresh('lines');
+        });
+    }
+
     private function nextClaimNumber(): string
     {
         $prefix = 'EXP-'.now()->format('Ym').'-';

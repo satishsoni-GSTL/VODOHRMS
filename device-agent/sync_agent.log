@@ -485,3 +485,27 @@ Traceback (most recent call last):
   File "C:\Users\satis\AppData\Local\Programs\Python\Python313\Lib\site-packages\zk\base.py", line 260, in __send_command
     raise ZKNetworkError(str(e))
 zk.exception.ZKNetworkError: timed out
+2026-09-07 11:24:25,682 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-09-07 11:24:26,381 [INFO] Found 101 new punch(es). Pushing to cloud in batches of 200.
+2026-09-07 11:24:27,598 [INFO] Batch 0-101: {'matched': 96, 'unmatched': 5, 'duplicate': 0, 'failed': 0}
+2026-09-07 11:24:27,599 [INFO] Sync complete. Cursor advanced to 2026-09-07 11:05:36.
+2026-09-11 15:05:03,692 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-09-11 15:05:04,596 [INFO] Found 221 new punch(es). Pushing to cloud in batches of 200.
+2026-09-11 15:05:06,118 [INFO] Batch 0-200: {'matched': 187, 'unmatched': 13, 'duplicate': 0, 'failed': 0}
+2026-09-11 15:05:06,665 [INFO] Batch 200-221: {'matched': 20, 'unmatched': 1, 'duplicate': 0, 'failed': 0}
+2026-09-11 15:05:06,667 [INFO] Sync complete. Cursor advanced to 2026-09-11 12:16:11.
+2026-09-16 14:11:06,239 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-09-16 14:11:07,010 [INFO] Found 61 new punch(es). Pushing to cloud in batches of 200.
+2026-09-16 14:11:09,451 [INFO] Batch 0-61: {'matched': 57, 'unmatched': 4, 'duplicate': 0, 'failed': 0}
+2026-09-16 14:11:09,454 [INFO] Sync complete. Cursor advanced to 2026-09-16 11:31:31.
+2026-09-22 11:29:12,415 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-09-22 11:29:13,269 [INFO] Found 152 new punch(es). Pushing to cloud in batches of 200.
+2026-09-22 11:29:15,493 [INFO] Batch 0-152: {'matched': 143, 'unmatched': 9, 'duplicate': 0, 'failed': 0}
+2026-09-22 11:29:15,494 [INFO] Sync complete. Cursor advanced to 2026-09-22 11:12:26.
+2026-09-22 12:17:43,640 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-09-22 12:17:44,648 [INFO] No new punches.
+2026-09-29 12:25:32,606 [INFO] Connecting to device at 192.168.1.201:5500 ...
+2026-09-29 12:25:33,386 [INFO] Found 250 new punch(es). Pushing to cloud in batches of 200.
+2026-09-29 12:25:36,394 [INFO] Batch 0-200: {'matched': 198, 'unmatched': 2, 'duplicate': 0, 'failed': 0}
+2026-09-29 12:25:37,310 [INFO] Batch 200-250: {'matched': 49, 'unmatched': 1, 'duplicate': 0, 'failed': 0}
+2026-09-29 12:25:37,310 [INFO] Sync complete. Cursor advanced to 2026-09-29 11:39:16.
