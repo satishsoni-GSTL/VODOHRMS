@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Employee;
 use App\Models\EmployeeTaxDeclaration;
 use App\Models\EmployeeTaxProjection;
+use App\Models\EmployeeTdsSchedule;
 use App\Models\FinancialYear;
 use App\Models\FullFinalSettlement;
 use App\Models\PayrollRun;
@@ -193,8 +194,43 @@ class IncomeTaxCalculationService
     public function project(Employee $employee, FinancialYear $financialYear, string $payrollMonth, string $regime): EmployeeTaxProjection
     {
         $projectedIncome = $this->projectAnnualIncome($employee, $financialYear, $payrollMonth);
+        $tax = $this->taxBreakdown($employee, $financialYear, $regime, $projectedIncome);
+
+        $tdsDeducted = $this->tdsDeductedTillDate($employee, $financialYear, $payrollMonth);
+        $remainingTax = max(0, round($tax['final_tax'] - $tdsDeducted, 2));
+
+        $fyMonths = $this->financialYearMonths($financialYear);
+        $remainingMonthsCount = max(1, count(array_filter($fyMonths, fn ($m) => $m >= $payrollMonth)));
+        $projectedMonthlyTds = round($remainingTax / $remainingMonthsCount, 2);
+
+        return EmployeeTaxProjection::updateOrCreate(
+            ['employee_id' => $employee->id, 'financial_year_id' => $financialYear->id, 'regime' => $regime],
+            [
+                'projected_annual_income' => $projectedIncome,
+                'total_exemptions' => $tax['total_exemptions'],
+                'taxable_income' => $tax['taxable_income'],
+                'tax_before_rebate' => $tax['tax_before_rebate'],
+                'rebate' => $tax['rebate'],
+                'surcharge' => $tax['surcharge'],
+                'cess' => $tax['cess'],
+                'final_tax' => $tax['final_tax'],
+                'tds_deducted_till_date' => $tdsDeducted,
+                'remaining_tax' => $remainingTax,
+                'projected_monthly_tds' => $projectedMonthlyTds,
+                'calculated_at' => now(),
+            ]
+        );
+    }
+
+    /**
+     * Slab tax -> rebate -> surcharge -> cess for a given annual income under one regime.
+     *
+     * @return array{total_exemptions: float, taxable_income: float, tax_before_rebate: float, rebate: float, surcharge: float, cess: float, final_tax: float}
+     */
+    public function taxBreakdown(Employee $employee, FinancialYear $financialYear, string $regime, float $annualIncome): array
+    {
         $exemptions = $this->computeExemptions($employee, $financialYear, $regime);
-        $taxableIncome = max(0, $projectedIncome - $exemptions);
+        $taxableIncome = max(0, $annualIncome - $exemptions);
 
         $slabs = $financialYear->slabsFor($regime);
         $config = $financialYear->configFor($regime);
@@ -205,32 +241,50 @@ class IncomeTaxCalculationService
         $surcharge = $this->calculateSurcharge($config, $taxableIncome, $taxAfterRebate);
         $cessPercent = $config ? (float) $config->cess_percent : 0.0;
         $cess = round(($taxAfterRebate + $surcharge) * $cessPercent / 100, 2);
-        $finalTax = round($taxAfterRebate + $surcharge + $cess, 2);
 
-        $tdsDeducted = $this->tdsDeductedTillDate($employee, $financialYear, $payrollMonth);
-        $remainingTax = max(0, round($finalTax - $tdsDeducted, 2));
+        return [
+            'total_exemptions' => $exemptions,
+            'taxable_income' => $taxableIncome,
+            'tax_before_rebate' => $taxBeforeRebate,
+            'rebate' => $rebate,
+            'surcharge' => $surcharge,
+            'cess' => $cess,
+            'final_tax' => round($taxAfterRebate + $surcharge + $cess, 2),
+        ];
+    }
 
+    /**
+     * Whole-year salary income used to generate a TDS schedule. Unlike projectAnnualIncome(),
+     * which only knows what was paid through HRMS payroll runs, this also counts months the
+     * employee was on roll but paid outside HRMS (HRMS went live mid-year) — those months
+     * are assumed at the current monthly gross, same as future months.
+     */
+    public function fullYearIncome(Employee $employee, FinancialYear $financialYear): float
+    {
         $fyMonths = $this->financialYearMonths($financialYear);
-        $remainingMonthsCount = max(1, count(array_filter($fyMonths, fn ($m) => $m >= $payrollMonth)));
-        $projectedMonthlyTds = round($remainingTax / $remainingMonthsCount, 2);
 
-        return EmployeeTaxProjection::updateOrCreate(
-            ['employee_id' => $employee->id, 'financial_year_id' => $financialYear->id, 'regime' => $regime],
-            [
-                'projected_annual_income' => $projectedIncome,
-                'total_exemptions' => $exemptions,
-                'taxable_income' => $taxableIncome,
-                'tax_before_rebate' => $taxBeforeRebate,
-                'rebate' => $rebate,
-                'surcharge' => $surcharge,
-                'cess' => $cess,
-                'final_tax' => $finalTax,
-                'tds_deducted_till_date' => $tdsDeducted,
-                'remaining_tax' => $remainingTax,
-                'projected_monthly_tds' => $projectedMonthlyTds,
-                'calculated_at' => now(),
-            ]
-        );
+        $paidByMonth = PayrollRunEmployee::query()
+            ->where('employee_id', $employee->id)
+            ->whereHas('payrollRun', fn ($q) => $q->whereIn('payroll_month', $fyMonths))
+            ->with('payrollRun:id,payroll_month')
+            ->get()
+            ->groupBy(fn (PayrollRunEmployee $row) => $row->payrollRun->payroll_month)
+            ->map(fn ($rows) => (float) $rows->sum('gross_earnings'));
+
+        $monthlyGross = (float) ($employee->currentSalaryStructure()?->monthly_gross ?? 0);
+        $joinedMonth = $employee->date_of_joining ? Carbon::parse($employee->date_of_joining)->format('Y-m') : null;
+
+        $income = 0.0;
+
+        foreach ($fyMonths as $month) {
+            if ($paidByMonth->has($month)) {
+                $income += $paidByMonth->get($month);
+            } elseif ($joinedMonth === null || $month >= $joinedMonth) {
+                $income += $monthlyGross;
+            }
+        }
+
+        return round($income + $this->fnfTaxableEarnings($employee, $financialYear), 2);
     }
 
     /**
@@ -249,11 +303,23 @@ class IncomeTaxCalculationService
     }
 
     /**
-     * The monthly TDS to deduct in payroll for this employee/month, recalculated fresh
-     * against their currently selected regime (defaults to old regime if none selected).
+     * The monthly TDS to deduct in payroll for this employee/month. If HR has generated a
+     * TDS schedule for the year, the last saved amount for this month is deducted as-is;
+     * otherwise it is recalculated fresh against their currently selected regime (defaults
+     * to old regime if none selected).
      */
     public function monthlyTdsForPayroll(Employee $employee, FinancialYear $financialYear, string $payrollMonth): float
     {
+        $scheduled = EmployeeTdsSchedule::query()
+            ->where('employee_id', $employee->id)
+            ->where('financial_year_id', $financialYear->id)
+            ->where('payroll_month', $payrollMonth)
+            ->value('amount');
+
+        if ($scheduled !== null) {
+            return (float) $scheduled;
+        }
+
         $regime = $employee->selectedRegimeFor($financialYear) ?? TaxRegimeSlab::REGIME_OLD;
         $projection = $this->project($employee, $financialYear, $payrollMonth, $regime);
 

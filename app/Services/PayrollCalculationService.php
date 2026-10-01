@@ -248,7 +248,7 @@ class PayrollCalculationService
 
         $holidays = Holiday::query()
             ->whereBetween('date', [$monthStart->toDateString(), $monthEnd->toDateString()])
-            ->where(fn ($q) => $q->whereNull('company_id')->orWhere('company_id', $employee->company_id))
+            ->observedBy($employee)
             ->pluck('date')
             ->map(fn ($d) => $d->toDateString())
             ->all();

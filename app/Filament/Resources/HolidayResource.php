@@ -27,10 +27,8 @@ class HolidayResource extends Resource
                 Forms\Components\TextInput::make('name')->required()->maxLength(255),
                 Forms\Components\DatePicker::make('date')->required(),
                 Forms\Components\Select::make('type')
-                    ->options([
-                        'national' => 'National Holiday', 'state' => 'State Holiday',
-                        'company' => 'Company Holiday', 'optional' => 'Optional Holiday',
-                    ])
+                    ->options(Holiday::TYPES)
+                    ->helperText('Optional holidays are a working day unless an employee claims them (up to their yearly limit).')
                     ->default('company')
                     ->required(),
                 Forms\Components\Select::make('company_id')->relationship('company', 'name')->searchable()->preload(),

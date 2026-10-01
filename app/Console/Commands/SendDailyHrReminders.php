@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Employee;
 use App\Models\Holiday;
+use App\Models\OptionalHolidayClaim;
 use App\Notifications\BirthdayNotification;
 use App\Notifications\Concerns\NotifiesRecipients;
 use App\Notifications\UpcomingHolidayNotification;
@@ -89,7 +90,16 @@ class SendDailyHrReminders extends Command
         foreach ($holidays as $holiday) {
             $notification = new UpcomingHolidayNotification($holiday);
 
-            foreach ($this->employeesForHolidayScope($holiday->company_id) as $employee) {
+            // An optional holiday is a working day for everyone except those who claimed it.
+            $recipients = $holiday->isOptional()
+                ? $this->activeEmployeesQuery()
+                    ->whereHas('optionalHolidayClaims', fn (Builder $q) => $q
+                        ->where('holiday_id', $holiday->id)
+                        ->where('status', OptionalHolidayClaim::STATUS_CLAIMED))
+                    ->get()
+                : $this->employeesForHolidayScope($holiday->company_id);
+
+            foreach ($recipients as $employee) {
                 $this->notifyEmployee($employee, $notification);
             }
         }

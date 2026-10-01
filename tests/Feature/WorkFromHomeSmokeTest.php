@@ -76,9 +76,9 @@ class WorkFromHomeSmokeTest extends TestCase
 
     public function test_wfh_request_approved_by_manager_marks_working_days_and_skips_weekly_off(): void
     {
-        // Pin "today" (2024-01-15, a Monday) after the requested range so the working-day
-        // math is deterministic and the range is backdated (WFH can't be for a future date).
-        Carbon::setTestNow(Carbon::parse('2024-01-15'));
+        // Pin "today" (2024-01-04) one day before the requested range so the working-day
+        // math is deterministic and the request is made in advance, as WFH requires.
+        Carbon::setTestNow(Carbon::parse('2024-01-04'));
 
         $manager = $this->makeUser('WMGR001', 'Manager');
         $employee = $this->makeUser('WEMP001', 'Employee', $manager->employee_id);
@@ -111,7 +111,8 @@ class WorkFromHomeSmokeTest extends TestCase
 
     public function test_self_clock_in_and_out_computes_hours_and_late_mark_without_losing_wfh_status(): void
     {
-        Carbon::setTestNow(Carbon::parse('2024-01-01 09:50:00')); // Monday, 20 min after the 09:30 shift start
+        // Applied and approved the day before (WFH must be applied 1 day in advance).
+        Carbon::setTestNow(Carbon::parse('2023-12-31 17:00:00'));
 
         $manager = $this->makeUser('WMGR002', 'Manager');
         $employee = $this->makeUser('WEMP002', 'Employee', $manager->employee_id);
@@ -123,9 +124,11 @@ class WorkFromHomeSmokeTest extends TestCase
             'effective_from' => '2023-01-01',
         ]);
 
-        $today = Carbon::today();
-        $request = app(WorkFromHomeService::class)->request($employee->employee, $today, $today, 'WFH today');
+        $today = Carbon::parse('2024-01-01');
+        $request = app(WorkFromHomeService::class)->request($employee->employee, $today, $today, 'WFH tomorrow');
         app(ApprovalWorkflowService::class)->act($request->approvalInstance, $manager, 'approve');
+
+        Carbon::setTestNow(Carbon::parse('2024-01-01 09:50:00')); // Monday, 20 min after the 09:30 shift start
 
         app(WorkFromHomeService::class)->clockIn($employee->employee);
 
@@ -151,18 +154,49 @@ class WorkFromHomeSmokeTest extends TestCase
         app(WorkFromHomeService::class)->clockIn($employee->employee);
     }
 
-    public function test_a_future_dated_wfh_request_is_rejected(): void
+    public function test_a_same_day_wfh_request_is_rejected(): void
     {
-        Carbon::setTestNow(Carbon::parse('2024-01-15'));
+        Carbon::setTestNow(Carbon::parse('2024-01-15 08:00:00'));
 
         $employee = $this->makeUser('WEMP004', 'Employee');
 
         $this->expectException(ValidationException::class);
         app(WorkFromHomeService::class)->request(
             $employee->employee,
-            Carbon::parse('2024-01-16'),
-            Carbon::parse('2024-01-16'),
-            'Next week',
+            Carbon::parse('2024-01-15'),
+            Carbon::parse('2024-01-15'),
+            'Today',
         );
+    }
+
+    public function test_a_back_dated_wfh_request_is_rejected(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2024-01-15'));
+
+        $employee = $this->makeUser('WEMP005', 'Employee');
+
+        $this->expectException(ValidationException::class);
+        app(WorkFromHomeService::class)->request(
+            $employee->employee,
+            Carbon::parse('2024-01-12'),
+            Carbon::parse('2024-01-12'),
+            'Last Friday',
+        );
+    }
+
+    public function test_a_wfh_request_one_day_in_advance_is_accepted(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2024-01-15 22:00:00'));
+
+        $employee = $this->makeUser('WEMP006', 'Employee');
+
+        $request = app(WorkFromHomeService::class)->request(
+            $employee->employee,
+            Carbon::parse('2024-01-16'),
+            Carbon::parse('2024-01-16'),
+            'Tomorrow',
+        );
+
+        $this->assertEquals(WorkFromHomeRequest::STATUS_PENDING, $request->status);
     }
 }

@@ -253,6 +253,11 @@ class Employee extends Model
             ->first();
     }
 
+    public function optionalHolidayClaims(): HasMany
+    {
+        return $this->hasMany(OptionalHolidayClaim::class);
+    }
+
     public function taxRegimes(): HasMany
     {
         return $this->hasMany(EmployeeTaxRegime::class);

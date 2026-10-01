@@ -22,7 +22,7 @@ class ApprovalHrOverrideTest extends TestCase
         parent::setUp();
         $this->seed(RolesAndPermissionsSeeder::class);
         $this->seed(Phase2Seeder::class);
-        Carbon::setTestNow(Carbon::parse('2026-03-02'));
+        Carbon::setTestNow(Carbon::parse('2026-03-01')); // day before the WFH date — WFH must be applied 1 day in advance
     }
 
     protected function tearDown(): void
