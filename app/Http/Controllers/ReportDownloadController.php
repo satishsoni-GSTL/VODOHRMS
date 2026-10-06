@@ -68,7 +68,7 @@ class ReportDownloadController extends Controller
             'expense' => [new ExpenseReportExport($month, $user), "expense-report-{$month}.xlsx"],
             'expense_monthly_summary' => [new ExpenseMonthlySummaryExport($month, $user), "expense-monthly-summary-{$month}.xlsx"],
             'expense_daywise' => [new ExpenseDayWiseExport($month, (int) $request->query('employee'), $user), "expense-daywise-{$month}.xlsx"],
-            'payroll' => [new PayrollReportExport($month), "payroll-report-{$month}.xlsx"],
+            'payroll' => [new PayrollReportExport($month, $request->integer('run') ?: null), "payroll-report-{$month}.xlsx"],
             'loan' => [new LoanReportExport($user), 'loan-report.xlsx'],
             'payroll_expense_fy' => (function () use ($request) {
                 $fy = FinancialYear::where('name', $request->query('financial_year'))->firstOrFail();

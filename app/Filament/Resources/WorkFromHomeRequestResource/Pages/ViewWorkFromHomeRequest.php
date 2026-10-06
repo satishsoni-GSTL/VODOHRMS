@@ -4,6 +4,7 @@ namespace App\Filament\Resources\WorkFromHomeRequestResource\Pages;
 
 use App\Filament\Resources\WorkFromHomeRequestResource;
 use App\Models\WorkFromHomeRequest;
+use Filament\Actions\Action;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
@@ -14,7 +15,10 @@ class ViewWorkFromHomeRequest extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        return WorkFromHomeRequestResource::approvalHeaderActions();
+        return [
+            ...WorkFromHomeRequestResource::approvalHeaderActions(),
+            WorkFromHomeRequestResource::reapplyAction(Action::class),
+        ];
     }
 
     public function infolist(Infolist $infolist): Infolist

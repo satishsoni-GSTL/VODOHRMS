@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\AttendanceRegularizationResource\Pages;
 
 use App\Filament\Resources\AttendanceRegularizationResource;
+use Filament\Actions\Action;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
@@ -13,7 +14,10 @@ class ViewAttendanceRegularization extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        return AttendanceRegularizationResource::approvalHeaderActions();
+        return [
+            ...AttendanceRegularizationResource::approvalHeaderActions(),
+            AttendanceRegularizationResource::reapplyAction(Action::class),
+        ];
     }
 
     public function infolist(Infolist $infolist): Infolist

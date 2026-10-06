@@ -44,6 +44,16 @@
                             <x-filament::badge :color="$this->statusColor($app->status)">
                                 {{ ucfirst(str_replace('_', ' ', $app->status)) }}
                             </x-filament::badge>
+                            @if (\App\Filament\Resources\LeaveApplicationResource::canReapply($app))
+                                <x-filament::link
+                                    :href="\App\Filament\Resources\LeaveApplicationResource::getUrl('create', ['reapply' => $app->id])"
+                                    icon="heroicon-o-arrow-path-rounded-square"
+                                    size="sm"
+                                    class="ms-2"
+                                >
+                                    Reapply
+                                </x-filament::link>
+                            @endif
                         </td>
                     </tr>
                 @empty

@@ -86,8 +86,9 @@ class EmployeeLoanResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make()
-                    ->visible(fn (EmployeeLoan $record) => ! in_array($record->status, [EmployeeLoan::STATUS_CLOSED, EmployeeLoan::STATUS_REJECTED], true)),
+                    ->visible(fn (EmployeeLoan $record) => ! in_array($record->status, [EmployeeLoan::STATUS_CLOSED, EmployeeLoan::STATUS_REJECTED, EmployeeLoan::STATUS_SENT_BACK], true)),
                 ...static::approvalActions(),
+                static::reapplyAction(),
             ])
             ->bulkActions([]);
     }

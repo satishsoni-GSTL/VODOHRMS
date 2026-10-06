@@ -184,7 +184,29 @@ class ApprovalWorkflowService
         return $permission !== null && $user->can($permission);
     }
 
+    /**
+     * Whether the user may act now: the request is still pending and this user hasn't
+     * already approved/rejected/sent it back — one action per approver per submission.
+     * (A resubmission creates a new instance, so the approver can act on it again.)
+     */
     public function canUserActOnInstance(ApprovalInstance $instance, User $user): bool
+    {
+        if ($instance->status !== ApprovalInstance::STATUS_PENDING) {
+            return false;
+        }
+
+        if ($instance->actions()->where('approver_id', $user->id)->exists()) {
+            return false;
+        }
+
+        return $this->isCurrentLevelApprover($instance, $user);
+    }
+
+    /**
+     * Whether the user is an approver for the instance's current level (or may manage the
+     * module wholesale), regardless of whether they have already acted on it.
+     */
+    private function isCurrentLevelApprover(ApprovalInstance $instance, User $user): bool
     {
         $requestable = $instance->requestable;
 
@@ -246,6 +268,25 @@ class ApprovalWorkflowService
                 $requestable->applyApprovalOutcome('sent_back', $level);
             } elseif ($action === ApprovalAction::ACTION_APPROVE) {
                 $this->handleApprove($instance, $applicableLevels, $level, $requestable);
+
+                // The approver's buttons disappear after one action, so if they are also an
+                // approver for the next level(s), carry their approval through those too —
+                // otherwise the request would wait on a level only they can clear.
+                while ($instance->status === ApprovalInstance::STATUS_PENDING
+                    && $this->isCurrentLevelApprover($instance, $approver)) {
+                    $nextLevel = $this->currentLevel($instance);
+
+                    ApprovalAction::create([
+                        'approval_instance_id' => $instance->id,
+                        'level' => $instance->current_level,
+                        'approver_id' => $approver->id,
+                        'action' => ApprovalAction::ACTION_APPROVE,
+                        'remarks' => 'Auto-approved: same approver as the previous level.',
+                        'acted_at' => now(),
+                    ]);
+
+                    $this->handleApprove($instance, $applicableLevels, $nextLevel, $requestable);
+                }
             }
 
             $this->auditLog->log(

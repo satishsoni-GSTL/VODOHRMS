@@ -112,6 +112,36 @@ trait HasApprovalActions
     }
 
     /**
+     * "Reapply" for a rejected or sent-back request: opens the create page pre-filled from
+     * it (see PrefillsFromReapply) so the employee can correct and raise it again.
+     *
+     * @param  class-string<\Filament\Tables\Actions\Action|Action>  $actionClass
+     */
+    public static function reapplyAction(string $actionClass = \Filament\Tables\Actions\Action::class)
+    {
+        return $actionClass::make('reapply')
+            ->label('Reapply')
+            ->icon('heroicon-o-arrow-path-rounded-square')
+            ->color('primary')
+            ->visible(fn (Model $record) => static::canReapply($record))
+            ->url(fn (Model $record) => static::getUrl('create', ['reapply' => $record->getKey()]));
+    }
+
+    /**
+     * Only the employee who raised it (or an HR/admin for the module) can reapply, and only
+     * once the request has been rejected or sent back.
+     */
+    public static function canReapply(Model $record): bool
+    {
+        $user = auth()->user();
+
+        return $user
+            && in_array($record->status, ['rejected', 'sent_back'], true)
+            && ((int) $record->employee_id === (int) $user->employee_id
+                || app(ApprovalWorkflowService::class)->userCanManageModule($record->getApprovalModule(), $user));
+    }
+
+    /**
      * Optional extra content rendered above the confirmation/remarks form in the approve/
      * reject/send-back modals, so approvers aren't acting blind. Override in a resource to
      * surface entity-specific detail (e.g. expense line items and receipts); default is none.

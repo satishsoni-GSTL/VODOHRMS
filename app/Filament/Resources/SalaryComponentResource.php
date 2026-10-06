@@ -55,6 +55,10 @@ class SalaryComponentResource extends Resource
                         Forms\Components\TextInput::make('default_amount')
                             ->numeric()->prefix('₹')
                             ->visible(fn (Forms\Get $get) => $get('calculation_type') === SalaryComponent::CALC_FIXED),
+                        Forms\Components\TextInput::make('max_amount')
+                            ->label('Maximum per month')
+                            ->numeric()->minValue(0)->prefix('₹')
+                            ->helperText('Cap on the monthly amount (e.g. PF ₹3,000). Leave blank for no cap. Applied from the next payroll calculation.'),
                     ])
                     ->visible(fn (Forms\Get $get) => in_array($get('type'), [SalaryComponent::TYPE_DEDUCTION, SalaryComponent::TYPE_EMPLOYER_CONTRIBUTION]))
                     ->columns(3),
@@ -84,6 +88,8 @@ class SalaryComponentResource extends Resource
                 Tables\Columns\TextColumn::make('code')->searchable(),
                 Tables\Columns\TextColumn::make('type')->badge(),
                 Tables\Columns\TextColumn::make('calculation_type'),
+                Tables\Columns\TextColumn::make('default_percentage')->label('%')->suffix('%')->placeholder('—'),
+                Tables\Columns\TextColumn::make('max_amount')->label('Max / month')->money('INR')->placeholder('—'),
                 Tables\Columns\IconColumn::make('is_prorated')->boolean()->toggleable(),
                 Tables\Columns\IconColumn::make('is_active')->boolean(),
             ])

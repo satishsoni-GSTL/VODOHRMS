@@ -78,6 +78,7 @@ class WorkFromHomeRequestResource extends Resource
                 Tables\Actions\ViewAction::make()
                     ->extraModalFooterActions(fn () => static::approvalActions()),
                 ...static::approvalActions(),
+                static::reapplyAction(),
             ])
             ->bulkActions([]);
     }

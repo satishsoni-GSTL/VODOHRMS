@@ -115,7 +115,16 @@ class PayrollCalculationService
         $fullMonthProratable = 0.0;
 
         if ($structure) {
-            foreach ($structure->lines()->with('component')->get() as $line) {
+            $structureLines = $structure->lines()->with('component')->get();
+
+            // Basic actually earned this month (after LOP) — the wage base for
+            // percentage-of-Basic components such as PF.
+            $basicLine = $structureLines->first(fn ($l) => strtoupper($l->component?->code ?? '') === 'BASIC');
+            $earnedBasic = $basicLine
+                ? ($basicLine->component->is_prorated ? round((float) $basicLine->monthly_amount * $prorationFactor, 2) : (float) $basicLine->monthly_amount)
+                : null;
+
+            foreach ($structureLines as $line) {
                 $component = $line->component;
 
                 // A deduction HR has waived for this run only — skip it entirely.
@@ -124,9 +133,21 @@ class PayrollCalculationService
                     continue;
                 }
 
-                $amount = $component->is_prorated
-                    ? round((float) $line->monthly_amount * $prorationFactor, 2)
-                    : (float) $line->monthly_amount;
+                if ($component->type !== SalaryComponent::TYPE_EARNING
+                    && $component->calculation_type === SalaryComponent::CALC_PERCENTAGE
+                    && $earnedBasic !== null) {
+                    // Re-derived every run from the component master (e.g. PF 12% of Basic,
+                    // max ₹3,000), so a rate/cap change applies to the next payroll.
+                    $amount = $component->amountFromBasic($earnedBasic);
+                } else {
+                    $amount = $component->is_prorated
+                        ? round((float) $line->monthly_amount * $prorationFactor, 2)
+                        : (float) $line->monthly_amount;
+
+                    if ($component->type !== SalaryComponent::TYPE_EARNING && $component->max_amount !== null) {
+                        $amount = min($amount, (float) $component->max_amount);
+                    }
+                }
 
                 if ($component->type === SalaryComponent::TYPE_EARNING && $component->is_prorated) {
                     $fullMonthProratable += (float) $line->monthly_amount;

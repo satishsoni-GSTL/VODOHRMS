@@ -149,11 +149,7 @@ class SalaryStructureService
             ->get();
 
         foreach ($autoComponents as $component) {
-            $amount = match ($component->calculation_type) {
-                SalaryComponent::CALC_PERCENTAGE => round($basicMonthly * (float) ($component->default_percentage ?? 0) / 100, 2),
-                SalaryComponent::CALC_FIXED => (float) ($component->default_amount ?? 0),
-                default => 0.0,
-            };
+            $amount = $component->amountFromBasic($basicMonthly);
 
             if ($amount <= 0) {
                 continue;

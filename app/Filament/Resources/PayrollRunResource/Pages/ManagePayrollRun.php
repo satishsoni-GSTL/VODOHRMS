@@ -94,7 +94,7 @@ class ManagePayrollRun extends ViewRecord implements HasTable
                 ->icon('heroicon-o-arrow-down-tray')
                 ->color('gray')
                 ->visible(fn () => auth()->user()->can('payroll.view'))
-                ->url(fn () => route('reports.download', ['type' => 'payroll', 'month' => $this->record->payroll_month]))
+                ->url(fn () => route('reports.download', ['type' => 'payroll', 'month' => $this->record->payroll_month, 'run' => $this->record->id]))
                 ->openUrlInNewTab(),
             Action::make('reviewDeductions')
                 ->label('Review Other Deductions')

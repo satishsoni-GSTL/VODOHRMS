@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\EmployeeLoanResource\Pages;
 
+use App\Filament\Concerns\PrefillsFromReapply;
 use App\Filament\Resources\EmployeeLoanResource;
 use App\Models\Employee;
 use App\Services\LoanService;
@@ -10,6 +11,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class CreateEmployeeLoan extends CreateRecord
 {
+    use PrefillsFromReapply;
+
     protected static string $resource = EmployeeLoanResource::class;
 
     protected function handleRecordCreation(array $data): Model
@@ -21,5 +24,10 @@ class CreateEmployeeLoan extends CreateRecord
             $data['reason'],
             $data['request_date'],
         );
+    }
+
+    protected function reapplyFields(): array
+    {
+        return ['employee_id', 'type', 'requested_amount', 'reason'];
     }
 }

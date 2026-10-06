@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\WorkFromHomeRequestResource\Pages;
 
+use App\Filament\Concerns\PrefillsFromReapply;
 use App\Filament\Resources\WorkFromHomeRequestResource;
 use App\Models\Employee;
 use App\Services\WorkFromHomeService;
@@ -11,6 +12,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class CreateWorkFromHomeRequest extends CreateRecord
 {
+    use PrefillsFromReapply;
+
     protected static string $resource = WorkFromHomeRequestResource::class;
 
     protected function handleRecordCreation(array $data): Model
@@ -23,5 +26,10 @@ class CreateWorkFromHomeRequest extends CreateRecord
             Carbon::parse($data['to_date']),
             $data['reason'],
         );
+    }
+
+    protected function reapplyFields(): array
+    {
+        return ['employee_id', 'from_date', 'to_date', 'reason'];
     }
 }

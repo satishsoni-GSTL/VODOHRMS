@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\LeaveApplicationResource\Pages;
 
 use App\Filament\Resources\LeaveApplicationResource;
+use Filament\Actions\Action;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
@@ -13,7 +14,10 @@ class ViewLeaveApplication extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        return LeaveApplicationResource::approvalHeaderActions();
+        return [
+            ...LeaveApplicationResource::approvalHeaderActions(),
+            LeaveApplicationResource::reapplyAction(Action::class),
+        ];
     }
 
     public function infolist(Infolist $infolist): Infolist

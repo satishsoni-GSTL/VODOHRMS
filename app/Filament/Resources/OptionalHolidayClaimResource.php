@@ -49,13 +49,34 @@ class OptionalHolidayClaimResource extends Resource
                 Forms\Components\Select::make('holiday_id')
                     ->label('Optional Holiday')
                     ->required()
+                    // Lists the whole year's optional holidays so employees can see them all;
+                    // past or already-claimed ones are shown but can't be picked.
                     ->options(function (Get $get) {
                         $employee = Employee::find($get('employee_id'));
 
-                        return $employee
-                            ? app(OptionalHolidayService::class)->claimableHolidays($employee)
-                                ->mapWithKeys(fn (Holiday $h) => [$h->id => $h->date->format('d M Y (D)')." — {$h->name}"])
-                            : [];
+                        if (! $employee) {
+                            return [];
+                        }
+
+                        $service = app(OptionalHolidayService::class);
+                        $claimable = $service->claimableHolidays($employee)->pluck('id');
+
+                        return $service->optionalHolidaysForYear($employee, (int) now()->format('Y'))
+                            ->mapWithKeys(function (Holiday $h) use ($claimable) {
+                                $label = $h->date->format('d M Y (D)').' — '.trim($h->name, " \t\n\r\0\x0B\u{00A0}");
+
+                                if (! $claimable->contains($h->id)) {
+                                    $label .= $h->date->isPast() ? ' (past)' : ' (already claimed)';
+                                }
+
+                                return [$h->id => $label];
+                            });
+                    })
+                    ->disableOptionWhen(function (string $value, Get $get) {
+                        $employee = Employee::find($get('employee_id'));
+
+                        return ! $employee
+                            || ! app(OptionalHolidayService::class)->claimableHolidays($employee)->contains('id', (int) $value);
                     })
                     ->helperText(function (Get $get) {
                         $employee = Employee::find($get('employee_id'));
@@ -66,8 +87,13 @@ class OptionalHolidayClaimResource extends Resource
 
                         $service = app(OptionalHolidayService::class);
                         $year = (int) now()->format('Y');
+                        $text = "Used {$service->usedFor($employee, $year)} of {$service->limitFor($employee, $year)} optional holidays in {$year}.";
 
-                        return "Used {$service->usedFor($employee, $year)} of {$service->limitFor($employee, $year)} optional holidays in {$year}.";
+                        if ($service->claimableHolidays($employee)->isEmpty()) {
+                            $text .= ' No upcoming optional holidays are left to claim — ask HR to add them in the Holiday calendar (type "Optional").';
+                        }
+
+                        return $text;
                     }),
                 Forms\Components\Textarea::make('reason')->columnSpanFull(),
             ])

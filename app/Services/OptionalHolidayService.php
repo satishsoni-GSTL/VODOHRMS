@@ -62,6 +62,22 @@ class OptionalHolidayService
             ->get();
     }
 
+    /**
+     * Every optional holiday of the year for the employee's company — the full list shown
+     * in the claim form, where past or already-claimed ones are listed but not selectable.
+     *
+     * @return Collection<int, Holiday>
+     */
+    public function optionalHolidaysForYear(Employee $employee, int $year): Collection
+    {
+        return Holiday::query()
+            ->where('type', Holiday::TYPE_OPTIONAL)
+            ->whereYear('date', $year)
+            ->where(fn ($q) => $q->whereNull('company_id')->orWhere('company_id', $employee->company_id))
+            ->orderBy('date')
+            ->get();
+    }
+
     public function claim(Employee $employee, Holiday $holiday, ?string $reason = null, ?User $by = null): OptionalHolidayClaim
     {
         if (! $holiday->isOptional()) {
