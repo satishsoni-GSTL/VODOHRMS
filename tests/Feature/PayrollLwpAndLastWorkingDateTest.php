@@ -159,6 +159,30 @@ class PayrollLwpAndLastWorkingDateTest extends TestCase
         $this->assertSame('2026-09-11', $employee->fresh()->last_working_date->toDateString());
     }
 
+    public function test_lop_waiver_pays_lop_days_for_that_run_and_survives_recalculation(): void
+    {
+        $employee = $this->makeEmployee('LOPW01');
+        $this->presentOnWeekdays($employee, '2026-09-01', '2026-09-30');
+        Attendance::where('employee_id', $employee->id)->whereIn('attendance_date', ['2026-09-15', '2026-09-16'])->delete();
+
+        $this->assertEquals(2, (float) $this->calculate($employee)->lop_days);
+
+        $service = app(PayrollCalculationService::class);
+        $run = $service->getOrCreateRun(self::MONTH, $employee->company_id);
+        $admin = \App\Models\User::create(['name' => 'admin', 'email' => 'lopw-admin@vodohrms.local', 'password' => bcrypt('x'), 'is_active' => true]);
+
+        $row = $service->waiveLop($run, $employee, 'Approved by director', $admin);
+        $this->assertEquals(0, (float) $row->lop_days);
+        $this->assertEquals(30, (float) $row->paid_days);
+        $this->assertEqualsWithDelta(30000, (float) $row->gross_earnings, 0.01);
+
+        // A full run recalculation keeps the waiver.
+        $this->assertEquals(0, (float) $this->calculate($employee)->lop_days);
+
+        $row = $service->removeLopWaiver($run->fresh(), $employee);
+        $this->assertEquals(2, (float) $row->lop_days);
+    }
+
     public function test_employee_who_left_before_the_month_is_excluded(): void
     {
         $employee = $this->makeEmployee('LWD003', ['status' => Employee::STATUS_NOTICE_PERIOD, 'last_working_date' => '2026-08-31']);

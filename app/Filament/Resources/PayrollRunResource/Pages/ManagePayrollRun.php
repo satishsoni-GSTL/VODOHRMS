@@ -6,6 +6,7 @@ use App\Filament\Pages\PrePayrollDeductionReview;
 use App\Filament\Resources\PayrollRunResource;
 use App\Models\PayrollRun;
 use App\Models\PayrollRunEmployee;
+use App\Models\PayrollRunLopWaiver;
 use App\Services\PayrollCalculationService;
 use App\Services\PayslipService;
 use App\Services\PrePayrollDeductionService;
@@ -40,7 +41,8 @@ class ManagePayrollRun extends ViewRecord implements HasTable
                 Tables\Columns\TextColumn::make('lop_days')
                     ->label('LOP Days')
                     ->badge()
-                    ->color(fn ($state) => $state > 0 ? 'danger' : 'gray'),
+                    ->color(fn ($state) => $state > 0 ? 'danger' : 'gray')
+                    ->description(fn (PayrollRunEmployee $record) => $this->lopWaiverFor($record) ? 'LOP waived' : null),
                 Tables\Columns\TextColumn::make('lop_amount')
                     ->label('LOP Amount')
                     ->money('INR')
@@ -67,6 +69,33 @@ class ManagePayrollRun extends ViewRecord implements HasTable
                     ->action(function (PayrollRunEmployee $record) {
                         app(PayrollCalculationService::class)->calculateForEmployee($this->record, $record->employee);
                         Notification::make()->title('Employee recalculated')->success()->send();
+                    }),
+                Tables\Actions\Action::make('waiveLop')
+                    ->label('Waive LOP')
+                    ->icon('heroicon-o-hand-raised')
+                    ->color('success')
+                    ->visible(fn (PayrollRunEmployee $record) => $this->record->isEditable()
+                        && auth()->user()->can('payroll.process')
+                        && (float) $record->lop_days > 0
+                        && ! $this->lopWaiverFor($record))
+                    ->modalDescription(fn (PayrollRunEmployee $record) => "Pay {$record->employee?->full_name}'s {$record->lop_days} LOP day(s) in full for this run only. Attendance and leave records are not changed.")
+                    ->form([Textarea::make('reason')->required()->label('Reason for waiving LOP')])
+                    ->action(function (PayrollRunEmployee $record, array $data) {
+                        app(PayrollCalculationService::class)->waiveLop($this->record, $record->employee, $data['reason'], auth()->user());
+                        Notification::make()->title('LOP waived and employee recalculated')->success()->send();
+                    }),
+                Tables\Actions\Action::make('removeLopWaiver')
+                    ->label('Remove LOP Waiver')
+                    ->icon('heroicon-o-x-mark')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalDescription(fn (PayrollRunEmployee $record) => 'Waived because: '.$this->lopWaiverFor($record)?->reason)
+                    ->visible(fn (PayrollRunEmployee $record) => $this->record->isEditable()
+                        && auth()->user()->can('payroll.process')
+                        && $this->lopWaiverFor($record))
+                    ->action(function (PayrollRunEmployee $record) {
+                        app(PayrollCalculationService::class)->removeLopWaiver($this->record, $record->employee);
+                        Notification::make()->title('LOP waiver removed and employee recalculated')->success()->send();
                     }),
                 Tables\Actions\Action::make('generatePayslip')
                     ->label('Generate Payslip')
@@ -159,6 +188,16 @@ class ManagePayrollRun extends ViewRecord implements HasTable
                     $this->runAction(fn () => app(PayrollCalculationService::class)->reopen($this->record, $data['reason']));
                 }),
         ];
+    }
+
+    /** @var \Illuminate\Support\Collection<int, PayrollRunLopWaiver>|null keyed by employee_id */
+    private ?\Illuminate\Support\Collection $lopWaivers = null;
+
+    private function lopWaiverFor(PayrollRunEmployee $record): ?PayrollRunLopWaiver
+    {
+        $this->lopWaivers ??= $this->record->lopWaivers()->get()->keyBy('employee_id');
+
+        return $this->lopWaivers->get($record->employee_id);
     }
 
     private function runAction(\Closure $callback): void

@@ -11,6 +11,7 @@ use App\Models\PayrollInput;
 use App\Models\PayrollRun;
 use App\Models\PayrollRunDeductionException;
 use App\Models\PayrollRunEmployee;
+use App\Models\PayrollRunLopWaiver;
 use App\Models\SalaryComponent;
 use App\Models\User;
 use App\Notifications\Concerns\NotifiesRecipients;
@@ -91,6 +92,12 @@ class PayrollCalculationService
             ->first();
 
         [$paidDays, $lopDays] = $this->calculatePaidDays($employee, $monthStart, $monthEnd);
+
+        // HR waived this employee's LOP for the run: every LOP day is paid.
+        if (PayrollRunLopWaiver::where('payroll_run_id', $run->id)->where('employee_id', $employee->id)->exists()) {
+            $paidDays = round($paidDays + $lopDays, 2);
+            $lopDays = 0.0;
+        }
         $prorationFactor = $totalDaysInMonth > 0 ? $paidDays / $totalDaysInMonth : 0;
 
         $runEmployee = PayrollRunEmployee::updateOrCreate(
@@ -354,6 +361,50 @@ class PayrollCalculationService
         }
 
         return [round($paidDays, 2), round($lopDays, 2)];
+    }
+
+    /**
+     * Waive an employee's Loss of Pay for this run only, then recalculate them.
+     */
+    public function waiveLop(PayrollRun $run, Employee $employee, string $reason, User $by): PayrollRunEmployee
+    {
+        $this->assertEditable($run);
+
+        $lopDays = (float) PayrollRunEmployee::where('payroll_run_id', $run->id)
+            ->where('employee_id', $employee->id)
+            ->value('lop_days');
+
+        $waiver = PayrollRunLopWaiver::updateOrCreate(
+            ['payroll_run_id' => $run->id, 'employee_id' => $employee->id],
+            ['waived_days' => $lopDays, 'reason' => $reason, 'waived_by' => $by->id],
+        );
+
+        $this->auditLog->log('waive_lop', $waiver, [], ['lop_days' => $lopDays, 'payroll_month' => $run->payroll_month], reason: $reason, module: 'payroll');
+
+        return $this->calculateForEmployee($run, $employee);
+    }
+
+    public function removeLopWaiver(PayrollRun $run, Employee $employee): PayrollRunEmployee
+    {
+        $this->assertEditable($run);
+
+        $waiver = PayrollRunLopWaiver::where('payroll_run_id', $run->id)->where('employee_id', $employee->id)->first();
+
+        if ($waiver) {
+            $this->auditLog->log('remove_lop_waiver', $waiver, $waiver->only(['waived_days', 'reason']), [], module: 'payroll');
+            $waiver->delete();
+        }
+
+        return $this->calculateForEmployee($run, $employee);
+    }
+
+    private function assertEditable(PayrollRun $run): void
+    {
+        if (! $run->isEditable()) {
+            throw ValidationException::withMessages([
+                'status' => 'This payroll run is finalized/locked. Reopen it before changing LOP.',
+            ]);
+        }
     }
 
     public function finalize(PayrollRun $run): void

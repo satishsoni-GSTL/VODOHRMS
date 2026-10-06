@@ -56,6 +56,11 @@ class PayrollRun extends Model
         return $this->hasMany(PayrollRunDeductionException::class);
     }
 
+    public function lopWaivers(): HasMany
+    {
+        return $this->hasMany(PayrollRunLopWaiver::class);
+    }
+
     public function isEditable(): bool
     {
         return ! in_array($this->status, [self::STATUS_FINALIZED, self::STATUS_LOCKED], true);
