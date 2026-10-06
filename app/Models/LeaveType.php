@@ -41,4 +41,13 @@ class LeaveType extends Model
     {
         return $this->hasMany(EmployeeLeaveBalance::class);
     }
+
+    /**
+     * Whether payroll pays for days on this leave. Leave Without Pay (code LWP) is always
+     * unpaid, whatever its is_paid_leave flag says.
+     */
+    public function isPaidForPayroll(): bool
+    {
+        return $this->is_paid_leave && strtoupper((string) $this->code) !== 'LWP';
+    }
 }

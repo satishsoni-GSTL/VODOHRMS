@@ -53,7 +53,7 @@ class Phase2Seeder extends Seeder
             ['name' => 'Casual Leave', 'code' => 'CL', 'annual_entitlement' => 12, 'accrual_frequency' => 'monthly', 'max_days_per_request' => 3],
             ['name' => 'Sick Leave', 'code' => 'SL', 'annual_entitlement' => 12, 'accrual_frequency' => 'monthly'],
             ['name' => 'Earned Leave', 'code' => 'EL', 'annual_entitlement' => 15, 'accrual_frequency' => 'annual', 'carry_forward_allowed' => true, 'max_carry_forward' => 30, 'encashment_allowed' => true],
-            ['name' => 'Leave Without Pay', 'code' => 'LWP', 'annual_entitlement' => 0, 'accrual_frequency' => 'none', 'allow_negative_balance' => true],
+            ['name' => 'Leave Without Pay', 'code' => 'LWP', 'annual_entitlement' => 0, 'accrual_frequency' => 'none', 'allow_negative_balance' => true, 'is_paid_leave' => false],
         ];
 
         foreach ($leaveTypes as $type) {

@@ -112,4 +112,17 @@ class Resignation extends Model implements Approvable
 
         $this->update($data);
     }
+
+    protected static function booted(): void
+    {
+        // Once HR has approved the resignation, its last working date becomes the employee's
+        // (payroll pays attendance only up to it). Re-synced if HR later edits the date.
+        static::saved(function (Resignation $resignation): void {
+            if ($resignation->status === self::STATUS_HR_APPROVED
+                && $resignation->approved_last_working_date
+                && $resignation->wasChanged(['status', 'approved_last_working_date'])) {
+                $resignation->employee?->update(['last_working_date' => $resignation->approved_last_working_date]);
+            }
+        });
+    }
 }

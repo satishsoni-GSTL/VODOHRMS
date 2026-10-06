@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\Auditable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -98,7 +99,7 @@ class Employee extends Model
         'company_id', 'branch_id', 'location_id', 'department_id', 'sub_department_id',
         'designation_id', 'grade_id', 'cost_center_id', 'employee_type_id', 'employment_type_id',
         'reporting_manager_id', 'hr_manager_id',
-        'date_of_joining', 'confirmation_date', 'probation_period_days', 'notice_period_days',
+        'date_of_joining', 'confirmation_date', 'last_working_date', 'probation_period_days', 'notice_period_days',
         'weekly_off', 'status', 'created_by', 'updated_by',
     ];
 
@@ -108,6 +109,7 @@ class Employee extends Model
             'dob' => 'date:Y-m-d',
             'date_of_joining' => 'date:Y-m-d',
             'confirmation_date' => 'date:Y-m-d',
+            'last_working_date' => 'date:Y-m-d',
             'current_address' => 'array',
             'permanent_address' => 'array',
             'weekly_off' => 'array',
@@ -331,5 +333,21 @@ class Employee extends Model
         }
 
         return $ids;
+    }
+
+    /**
+     * Employees to include in a payroll month: anyone currently employed, plus anyone who has
+     * left but whose last working date falls in (or after) that month — so the final month
+     * is still paid. Anyone whose last working date is before the month is excluded.
+     */
+    public function scopePayableForMonth(Builder $query, string $monthStart): Builder
+    {
+        return $query
+            ->where(fn (Builder $q) => $q
+                ->whereIn('status', [self::STATUS_ACTIVE, self::STATUS_PROBATION, self::STATUS_NOTICE_PERIOD])
+                ->orWhere('last_working_date', '>=', $monthStart))
+            ->where(fn (Builder $q) => $q
+                ->whereNull('last_working_date')
+                ->orWhere('last_working_date', '>=', $monthStart));
     }
 }

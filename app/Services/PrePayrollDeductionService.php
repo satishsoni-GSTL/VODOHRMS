@@ -63,7 +63,7 @@ class PrePayrollDeductionService
 
         $employees = Employee::query()
             ->where('company_id', $run->company_id)
-            ->whereIn('status', [Employee::STATUS_ACTIVE, Employee::STATUS_PROBATION, Employee::STATUS_NOTICE_PERIOD])
+            ->payableForMonth(Carbon::createFromFormat('Y-m', $run->payroll_month)->startOfMonth()->toDateString())
             ->orderBy('employee_code')
             ->get();
 

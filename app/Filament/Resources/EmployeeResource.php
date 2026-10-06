@@ -145,6 +145,10 @@ class EmployeeResource extends Resource
                                 ->preload(),
                             Forms\Components\DatePicker::make('date_of_joining')->required(),
                             Forms\Components\DatePicker::make('confirmation_date'),
+                            Forms\Components\DatePicker::make('last_working_date')
+                                ->label('Last Working Date')
+                                ->afterOrEqual('date_of_joining')
+                                ->helperText('Set on resignation/exit. Payroll pays attendance only up to this date (plus weekly offs immediately after it). Filled automatically when HR approves a resignation.'),
                             Forms\Components\TextInput::make('probation_period_days')->numeric(),
                             Forms\Components\TextInput::make('notice_period_days')->numeric(),
                             Forms\Components\TextInput::make('biometric_enroll_id')

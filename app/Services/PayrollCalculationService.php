@@ -59,7 +59,7 @@ class PayrollCalculationService
 
         $employees = Employee::query()
             ->where('company_id', $run->company_id)
-            ->whereIn('status', [Employee::STATUS_ACTIVE, Employee::STATUS_PROBATION, Employee::STATUS_NOTICE_PERIOD])
+            ->payableForMonth(Carbon::createFromFormat('Y-m', $run->payroll_month)->startOfMonth()->toDateString())
             ->get();
 
         $waived = $this->deductionExceptions->waivedKeySet($run);
@@ -169,7 +169,8 @@ class PayrollCalculationService
             }
         }
 
-        $lopAmount = round($fullMonthProratable * (1 - $prorationFactor), 2);
+        // Only true LOP days — days after the last working date are unpaid but aren't LOP.
+        $lopAmount = $totalDaysInMonth > 0 ? round($fullMonthProratable * $lopDays / $totalDaysInMonth, 2) : 0.0;
 
         foreach (PayrollInput::where('employee_id', $employee->id)->where('payroll_month', $run->payroll_month)->get() as $input) {
             $amount = (float) $input->amount;
@@ -289,16 +290,37 @@ class PayrollCalculationService
             ->with('leaveType')
             ->get()
             ->each(function (LeaveApplication $application) use (&$approvedLeaveDates) {
+                // Leave Without Pay (or any unpaid leave type) is LOP; a half-day of it docks half a day.
+                $isPaid = $application->leaveType?->isPaidForPayroll() ?? false;
+
                 foreach (CarbonPeriod::create($application->from_date, $application->to_date) as $date) {
-                    $approvedLeaveDates[$date->toDateString()] = $application->is_half_day ? 0.5 : ($application->leaveType->is_paid_leave ? 1.0 : 0.0);
+                    $approvedLeaveDates[$date->toDateString()] = $isPaid ? 1.0 : ($application->is_half_day ? 0.5 : 0.0);
                 }
             });
+
+        // After the last working date the employee is no longer employed: those days are
+        // unpaid (not LOP). Weekly offs immediately following it (e.g. LWD Friday -> Sat/Sun)
+        // are still paid.
+        $paidThrough = null;
+
+        if ($employee->last_working_date) {
+            $paidThrough = Carbon::parse($employee->last_working_date)->startOfDay();
+
+            while ($paidThrough->lt($monthEnd)
+                && in_array(strtolower($paidThrough->copy()->addDay()->format('l')), $weeklyOff->all(), true)) {
+                $paidThrough->addDay();
+            }
+        }
 
         $paidDays = 0.0;
         $lopDays = 0.0;
 
         foreach (CarbonPeriod::create($monthStart, $monthEnd) as $date) {
             $dateString = $date->toDateString();
+
+            if ($paidThrough && $date->gt($paidThrough)) {
+                continue;
+            }
 
             if (in_array(strtolower($date->format('l')), $weeklyOff->all(), true) || in_array($dateString, $holidays, true)) {
                 $paidDays += 1.0;
