@@ -204,6 +204,9 @@ class PrePayrollDeductionExceptionTest extends TestCase
             'status' => PayrollRun::STATUS_DRAFT,
         ]);
 
+        // TDS is only deducted for employees with a generated TDS schedule.
+        app(\App\Services\TdsScheduleService::class)->generate($employee, $fy, $month);
+
         $tax = app(\App\Services\IncomeTaxCalculationService::class);
         $ref = new \ReflectionMethod($tax, 'tdsDeductedTillDate');
         $ref->setAccessible(true);

@@ -303,10 +303,9 @@ class IncomeTaxCalculationService
     }
 
     /**
-     * The monthly TDS to deduct in payroll for this employee/month. If HR has generated a
-     * TDS schedule for the year, the last saved amount for this month is deducted as-is;
-     * otherwise it is recalculated fresh against their currently selected regime (defaults
-     * to old regime if none selected).
+     * The monthly TDS to deduct in payroll for this employee/month: only the amount saved in
+     * the employee's TDS schedule for that month. No schedule row → no TDS is deducted (HR
+     * must generate the employee's TDS schedule for payroll to withhold tax).
      */
     public function monthlyTdsForPayroll(Employee $employee, FinancialYear $financialYear, string $payrollMonth): float
     {
@@ -316,14 +315,7 @@ class IncomeTaxCalculationService
             ->where('payroll_month', $payrollMonth)
             ->value('amount');
 
-        if ($scheduled !== null) {
-            return (float) $scheduled;
-        }
-
-        $regime = $employee->selectedRegimeFor($financialYear) ?? TaxRegimeSlab::REGIME_OLD;
-        $projection = $this->project($employee, $financialYear, $payrollMonth, $regime);
-
-        return (float) $projection->projected_monthly_tds;
+        return (float) ($scheduled ?? 0);
     }
 
     public function financialYearForMonth(string $payrollMonth): ?FinancialYear

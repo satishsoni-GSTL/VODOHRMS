@@ -171,7 +171,7 @@ class TdsScheduleTest extends TestCase
         $service->updateAmount($row->fresh(), 100);
     }
 
-    public function test_without_a_schedule_payroll_falls_back_to_auto_calculated_tds(): void
+    public function test_without_a_schedule_payroll_deducts_no_tds(): void
     {
         $employee = $this->makeEmployee('TDS104');
 
@@ -180,9 +180,8 @@ class TdsScheduleTest extends TestCase
 
         $incomeTax = app(IncomeTaxCalculationService::class);
         $tds = $incomeTax->monthlyTdsForPayroll($employee, $this->year, '2026-10');
-        $projection = $incomeTax->project($employee, $this->year, '2026-10', 'old');
 
-        $this->assertEqualsWithDelta((float) $projection->projected_monthly_tds, $tds, 0.01);
+        $this->assertSame(0.0, $tds);
         $this->assertSame(0, EmployeeTdsSchedule::where('employee_id', $employee->id)->count());
     }
 

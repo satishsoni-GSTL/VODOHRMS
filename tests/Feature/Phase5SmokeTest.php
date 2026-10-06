@@ -143,7 +143,7 @@ class Phase5SmokeTest extends TestCase
         $this->assertLessThan((float) $before->taxable_income, (float) $after->taxable_income);
     }
 
-    public function test_payroll_automatically_deducts_projected_monthly_tds(): void
+    public function test_payroll_deducts_tds_only_from_a_generated_tds_schedule(): void
     {
         $company = Company::firstOrCreate(['code' => 'HO'], ['name' => 'Head Office', 'is_active' => true]);
         $employee = $this->makeUser('EMP520', 'Employee', $company);
@@ -166,11 +166,21 @@ class Phase5SmokeTest extends TestCase
         $run = $payrollService->getOrCreateRun('2026-05', $company->id);
         $payrollService->calculate($run);
 
+        // No TDS schedule generated for the employee → no TDS, despite a tax liability.
+        $runEmployee = $run->employees()->where('employee_id', $employee->employee_id)->firstOrFail();
+        $this->assertNull($runEmployee->lines()->where('label', IncomeTaxCalculationService::TDS_LABEL)->first());
+
+        // Once HR generates the schedule, payroll deducts exactly the scheduled amount.
+        app(\App\Services\TdsScheduleService::class)->generate($employee->employee, $fy, '2026-05');
+        $scheduled = (float) \App\Models\EmployeeTdsSchedule::where('employee_id', $employee->employee_id)
+            ->where('payroll_month', '2026-05')->value('amount');
+        $payrollService->calculate($run->fresh());
+
         $runEmployee = $run->employees()->where('employee_id', $employee->employee_id)->firstOrFail();
         $tdsLine = $runEmployee->lines()->where('label', IncomeTaxCalculationService::TDS_LABEL)->first();
 
-        $this->assertNotNull($tdsLine, 'Expected an automatic TDS deduction line in payroll.');
-        $this->assertGreaterThan(0, $tdsLine->amount);
-        $this->assertLessThan((float) $runEmployee->gross_earnings, (float) $runEmployee->net_pay);
+        $this->assertNotNull($tdsLine, 'Expected a TDS deduction line from the schedule.');
+        $this->assertGreaterThan(0, $scheduled);
+        $this->assertEqualsWithDelta($scheduled, (float) $tdsLine->amount, 0.01);
     }
 }
