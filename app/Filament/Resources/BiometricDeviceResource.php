@@ -36,6 +36,24 @@ class BiometricDeviceResource extends Resource
             Forms\Components\TextInput::make('location')
                 ->maxLength(150)
                 ->helperText('E.g. LAN IP or physical location, for your own reference.'),
+            Forms\Components\TextInput::make('allowed_ips')
+                ->label('Allowed IPs (office internet address)')
+                ->placeholder('e.g. 106.219.135.64')
+                ->maxLength(500)
+                ->rule(function () {
+                    return function (string $attribute, $value, \Closure $fail) {
+                        foreach (array_filter(array_map('trim', preg_split('/[\s,;]+/', (string) $value))) as $entry) {
+                            [$ip, $mask] = array_pad(explode('/', $entry, 2), 2, null);
+                            if (! filter_var($ip, FILTER_VALIDATE_IP) || ($mask !== null && ! ctype_digit($mask))) {
+                                $fail("'{$entry}' is not a valid IP address or range.");
+                            }
+                        }
+                    };
+                })
+                ->helperText(fn (?BiometricDevice $record) => 'Punches are accepted only from these public IPs (comma-separated; ranges like 203.0.113.0/24 allowed). '
+                    .'Leave empty to accept any IP — not recommended: a leaked token could then be used from anywhere.'
+                    .($record?->last_synced_ip ? " Last sync came from {$record->last_synced_ip}." : ''))
+                ->columnSpanFull(),
             Forms\Components\Toggle::make('is_active')->default(true),
         ])->columns(2);
     }

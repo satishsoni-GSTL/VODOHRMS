@@ -192,6 +192,14 @@ Notes:
 The camera and gallery are used through the system picker, so no camera or storage
 permission is requested.
 
+`READ_MEDIA_IMAGES`, `READ_MEDIA_VIDEO`, `READ_MEDIA_AUDIO` and `READ_EXTERNAL_STORAGE` are
+removed from the final app in `android/app/src/main/AndroidManifest.xml` (`tools:node="remove"`).
+The `open_filex` library declares them, but the app doesn't need them. This complies with
+Play's photo and video permissions policy.
+
+If Play Console still shows the warning, a release on another track (for example Internal
+testing) still contains an older build. Replace it with build 2 or later on **every** track.
+
 ---
 
 ## 6. Release

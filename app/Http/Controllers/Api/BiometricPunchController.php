@@ -18,7 +18,9 @@ class BiometricPunchController extends Controller
         $data = $request->validate([
             'punches' => ['required', 'array', 'min:1'],
             'punches.*.device_user_id' => ['required', 'string'],
-            'punches.*.punch_time' => ['required', 'date'],
+            // A real device never sends future punches, and the agent only back-fills recent
+            // history — anything else is a forged / bad request.
+            'punches.*.punch_time' => ['required', 'date', 'before_or_equal:'.now()->addMinutes(10)->toDateTimeString(), 'after:'.now()->subDays(45)->toDateString()],
             'punches.*.punch_type' => ['nullable', 'string', 'in:in,out'],
         ]);
 
@@ -31,7 +33,7 @@ class BiometricPunchController extends Controller
 
         foreach ($data['punches'] as $punch) {
             try {
-                $results[$punchService->ingest($device, $punch)]++;
+                $results[$punchService->ingest($device, $punch, $request->ip())]++;
             } catch (Throwable $e) {
                 $results['failed']++;
                 report($e);

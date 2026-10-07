@@ -6,11 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\IpUtils;
 
 class BiometricDevice extends Model
 {
     protected $fillable = [
-        'name', 'code', 'branch_id', 'location', 'api_token_hash',
+        'name', 'code', 'branch_id', 'location', 'allowed_ips', 'api_token_hash',
         'is_active', 'last_synced_at', 'last_synced_ip',
     ];
 
@@ -46,6 +47,17 @@ class BiometricDevice extends Model
         return static::where('is_active', true)
             ->get()
             ->first(fn (self $device) => hash_equals($device->api_token_hash, $hash));
+    }
+
+    /**
+     * Whether the sync agent may post from $ip. With no allow-list configured any IP is
+     * accepted (legacy behaviour); set the office's public IP(s) to lock a leaked token out.
+     */
+    public function allowsIp(?string $ip): bool
+    {
+        $allowed = array_values(array_filter(array_map('trim', preg_split('/[\s,;]+/', (string) $this->allowed_ips))));
+
+        return $allowed === [] || ($ip !== null && IpUtils::checkIp($ip, $allowed));
     }
 
     public function branch(): BelongsTo

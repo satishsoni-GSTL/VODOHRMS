@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ExpenseClaimResource\Pages;
 
+use App\Filament\Concerns\LocksEmployeeToSelf;
 use App\Filament\Resources\ExpenseClaimResource;
 use App\Models\Employee;
 use App\Services\ExpenseClaimService;
@@ -10,6 +11,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class CreateExpenseClaim extends CreateRecord
 {
+    use LocksEmployeeToSelf;
+
     protected static string $resource = ExpenseClaimResource::class;
 
     protected function handleRecordCreation(array $data): Model
@@ -22,5 +25,10 @@ class CreateExpenseClaim extends CreateRecord
             $data['project_client'] ?? null,
             $data['lines'] ?? [],
         );
+    }
+
+    protected function employeeOverridePermission(): string
+    {
+        return 'expense.manage';
     }
 }

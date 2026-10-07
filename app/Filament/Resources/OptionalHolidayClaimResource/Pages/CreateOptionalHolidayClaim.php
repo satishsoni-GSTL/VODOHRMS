@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\OptionalHolidayClaimResource\Pages;
 
+use App\Filament\Concerns\LocksEmployeeToSelf;
 use App\Filament\Resources\OptionalHolidayClaimResource;
 use App\Models\Employee;
 use App\Models\Holiday;
@@ -14,6 +15,8 @@ use Illuminate\Validation\ValidationException;
 
 class CreateOptionalHolidayClaim extends CreateRecord
 {
+    use LocksEmployeeToSelf;
+
     protected static string $resource = OptionalHolidayClaimResource::class;
 
     protected static ?string $title = 'Claim Optional Holiday';
@@ -40,5 +43,10 @@ class CreateOptionalHolidayClaim extends CreateRecord
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');
+    }
+
+    protected function employeeOverridePermission(): string
+    {
+        return 'attendance.manage';
     }
 }

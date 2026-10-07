@@ -126,7 +126,8 @@ class ExpenseController extends MobileController
             'lines.*.vendor' => ['nullable', 'string', 'max:150'],
             'lines.*.bill_number' => ['nullable', 'string', 'max:100'],
             'lines.*.payment_mode' => ['nullable', Rule::in(array_keys(self::PAYMENT_MODES))],
-            'lines.*.receipt' => ['nullable', 'file', 'max:10240', 'mimes:jpg,jpeg,png,pdf,heic,webp'],
+            // Photo or PDF only (no ZIP / Office files) — same rule as the web form.
+            'lines.*.receipt' => ['nullable', 'file', 'max:10240', 'mimes:jpg,jpeg,png,webp,pdf'],
             // On resubmit: keep the receipt already attached to this line of the same claim.
             'lines.*.existing_line_id' => ['nullable', 'integer'],
         ]);

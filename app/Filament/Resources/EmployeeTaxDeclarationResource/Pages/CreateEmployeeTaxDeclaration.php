@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\EmployeeTaxDeclarationResource\Pages;
 
+use App\Filament\Concerns\LocksEmployeeToSelf;
 use App\Filament\Resources\EmployeeTaxDeclarationResource;
 use App\Models\Employee;
 use App\Models\FinancialYear;
@@ -12,6 +13,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class CreateEmployeeTaxDeclaration extends CreateRecord
 {
+    use LocksEmployeeToSelf;
+
     protected static string $resource = EmployeeTaxDeclarationResource::class;
 
     protected function handleRecordCreation(array $data): Model
@@ -23,5 +26,10 @@ class CreateEmployeeTaxDeclaration extends CreateRecord
             (float) $data['declared_amount'],
             $data['proof_path'] ?? null,
         );
+    }
+
+    protected function employeeOverridePermission(): string
+    {
+        return 'tax.manage';
     }
 }

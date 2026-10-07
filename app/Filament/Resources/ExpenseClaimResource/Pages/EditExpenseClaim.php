@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ExpenseClaimResource\Pages;
 
+use App\Filament\Concerns\LocksEmployeeToSelf;
 use App\Filament\Resources\ExpenseClaimResource;
 use App\Models\ExpenseClaim;
 use App\Services\ExpenseClaimService;
@@ -15,6 +16,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class EditExpenseClaim extends EditRecord
 {
+    use LocksEmployeeToSelf;
+
     protected static string $resource = ExpenseClaimResource::class;
 
     public function getTitle(): string
@@ -60,5 +63,10 @@ class EditExpenseClaim extends EditRecord
     protected function getRedirectUrl(): ?string
     {
         return ExpenseClaimResource::getUrl('view', ['record' => $this->record]);
+    }
+
+    protected function employeeOverridePermission(): string
+    {
+        return 'expense.manage';
     }
 }

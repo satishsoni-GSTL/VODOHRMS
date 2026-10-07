@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ResignationResource\Pages;
 
+use App\Filament\Concerns\LocksEmployeeToSelf;
 use App\Filament\Resources\ResignationResource;
 use App\Models\Employee;
 use App\Services\ResignationService;
@@ -10,6 +11,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class CreateResignation extends CreateRecord
 {
+    use LocksEmployeeToSelf;
+
     protected static string $resource = ResignationResource::class;
 
     protected function handleRecordCreation(array $data): Model
@@ -20,5 +23,10 @@ class CreateResignation extends CreateRecord
             $data['reason'],
             $data['requested_last_working_date'],
         );
+    }
+
+    protected function employeeOverridePermission(): string
+    {
+        return 'resignation.manage';
     }
 }

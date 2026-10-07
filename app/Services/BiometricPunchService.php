@@ -18,7 +18,7 @@ class BiometricPunchService
      * (if matched) record it against the day's attendance. Returns one of
      * 'matched', 'unmatched', 'duplicate'.
      */
-    public function ingest(BiometricDevice $device, array $punch): string
+    public function ingest(BiometricDevice $device, array $punch, ?string $sourceIp = null): string
     {
         $punchTime = Carbon::parse($punch['punch_time']);
 
@@ -35,6 +35,7 @@ class BiometricPunchService
         $log->fill([
             'punch_type' => $punch['punch_type'] ?? null,
             'raw_payload' => $punch,
+            'source_ip' => $sourceIp,
             'status' => DevicePunchLog::STATUS_PENDING,
         ]);
 

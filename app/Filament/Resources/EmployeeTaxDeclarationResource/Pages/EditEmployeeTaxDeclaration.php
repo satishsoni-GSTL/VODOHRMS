@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\EmployeeTaxDeclarationResource\Pages;
 
+use App\Filament\Concerns\LocksEmployeeToSelf;
 use App\Filament\Resources\EmployeeTaxDeclarationResource;
 use App\Models\EmployeeTaxDeclaration;
 use Filament\Actions;
@@ -9,6 +10,8 @@ use Filament\Resources\Pages\EditRecord;
 
 class EditEmployeeTaxDeclaration extends EditRecord
 {
+    use LocksEmployeeToSelf;
+
     protected static string $resource = EmployeeTaxDeclarationResource::class;
 
     protected function getHeaderActions(): array
@@ -20,6 +23,7 @@ class EditEmployeeTaxDeclaration extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        $data = $this->lockEmployee($data);
         // Re-editing a rejected declaration resubmits it for verification.
         if ($this->record->status === EmployeeTaxDeclaration::STATUS_REJECTED) {
             $data['status'] = EmployeeTaxDeclaration::STATUS_DECLARED;
@@ -30,5 +34,10 @@ class EditEmployeeTaxDeclaration extends EditRecord
         }
 
         return $data;
+    }
+
+    protected function employeeOverridePermission(): string
+    {
+        return 'tax.manage';
     }
 }

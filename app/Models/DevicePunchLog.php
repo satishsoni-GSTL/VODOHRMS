@@ -26,7 +26,7 @@ class DevicePunchLog extends Model
 
     protected $fillable = [
         'biometric_device_id', 'device_user_id', 'punch_time', 'punch_type',
-        'raw_payload', 'employee_id', 'status', 'attendance_punch_id',
+        'raw_payload', 'source_ip', 'employee_id', 'status', 'attendance_punch_id',
     ];
 
     protected function casts(): array

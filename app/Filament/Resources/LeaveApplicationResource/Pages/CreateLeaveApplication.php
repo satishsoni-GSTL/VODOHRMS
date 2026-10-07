@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\LeaveApplicationResource\Pages;
 
+use App\Filament\Concerns\LocksEmployeeToSelf;
 use App\Filament\Concerns\PrefillsFromReapply;
 use App\Filament\Resources\LeaveApplicationResource;
 use App\Models\Employee;
@@ -14,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
 class CreateLeaveApplication extends CreateRecord
 {
     use PrefillsFromReapply;
+    use LocksEmployeeToSelf;
 
     protected static string $resource = LeaveApplicationResource::class;
 
@@ -37,5 +39,10 @@ class CreateLeaveApplication extends CreateRecord
     protected function reapplyFields(): array
     {
         return ['employee_id', 'leave_type_id', 'from_date', 'to_date', 'is_half_day', 'half_day_session', 'reason', 'attachment_path'];
+    }
+
+    protected function employeeOverridePermission(): string
+    {
+        return 'leave.manage';
     }
 }

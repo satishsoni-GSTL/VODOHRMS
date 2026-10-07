@@ -59,9 +59,15 @@ class ExpenseClaimResource extends Resource
                         Forms\Components\Select::make('payment_mode')
                             ->options(['cash' => 'Cash', 'card' => 'Card', 'upi' => 'UPI', 'other' => 'Other']),
                         Forms\Components\FileUpload::make('receipt_path')
+                            ->label('Bill / receipt')
                             ->directory('expense-receipts')
                             ->disk('local')
-                            ->visibility('private'),
+                            ->visibility('private')
+                            // Bills must be a photo or a PDF so they can be viewed and included in
+                            // the monthly expense statement — no ZIP / Excel / Word files.
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
+                            ->maxSize(10240)
+                            ->helperText('Photo (JPG, PNG, WEBP) or PDF, up to 10 MB.'),
                         Forms\Components\Textarea::make('description')->columnSpanFull(),
                     ])
                     ->columns(2)

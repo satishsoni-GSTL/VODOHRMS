@@ -25,3 +25,8 @@ yarn-error.log
 # Firebase service-account keys (push notifications) - never commit
 /firebase*.json
 /storage/app/firebase*.json
+
+# Biometric sync agent: secrets and runtime files (config.ini holds the device API token)
+/device-agent/config.ini
+/device-agent/last_sync.json
+/device-agent/sync_agent.log

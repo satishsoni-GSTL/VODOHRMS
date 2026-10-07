@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\EmployeeTaxRegimeResource\Pages;
 
+use App\Filament\Concerns\LocksEmployeeToSelf;
 use App\Filament\Resources\EmployeeTaxRegimeResource;
 use App\Models\Employee;
 use App\Models\FinancialYear;
@@ -14,6 +15,8 @@ use Illuminate\Validation\ValidationException;
 
 class CreateEmployeeTaxRegime extends CreateRecord
 {
+    use LocksEmployeeToSelf;
+
     protected static string $resource = EmployeeTaxRegimeResource::class;
 
     /**
@@ -39,5 +42,10 @@ class CreateEmployeeTaxRegime extends CreateRecord
 
             throw new Halt();
         }
+    }
+
+    protected function employeeOverridePermission(): string
+    {
+        return 'tax.manage';
     }
 }

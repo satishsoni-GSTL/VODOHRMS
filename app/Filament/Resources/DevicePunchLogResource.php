@@ -38,6 +38,7 @@ class DevicePunchLogResource extends Resource
                         DevicePunchLog::STATUS_DUPLICATE => 'gray',
                         default => 'warning',
                     }),
+                Tables\Columns\TextColumn::make('source_ip')->label('Source IP')->placeholder('—')->searchable()->toggleable(),
                 Tables\Columns\TextColumn::make('created_at')->label('Received At')->dateTime('d M Y H:i')->sortable(),
             ])
             ->defaultSort('created_at', 'desc')

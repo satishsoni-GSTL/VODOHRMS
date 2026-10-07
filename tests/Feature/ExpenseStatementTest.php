@@ -109,6 +109,33 @@ class ExpenseStatementTest extends TestCase
         $this->assertSame('expense-statement-EMP-2026-09.pdf', $service->fileName($this->employee, '2026-09'));
     }
 
+    public function test_bills_must_be_a_photo_or_pdf_no_zip(): void
+    {
+        $user = User::create(['employee_id' => $this->employee->id, 'employee_code' => 'EMP', 'name' => 'Ravi', 'email' => 'emp@x.test', 'password' => bcrypt('x'), 'is_active' => true]);
+        $user->assignRole('Employee');
+        $category = ExpenseCategory::query()->firstOrFail();
+        $line = fn (array $extra) => ['category_id' => $category->id, 'expense_date' => '2026-09-02', 'requested_amount' => 100] + $extra;
+
+        // Mobile app API.
+        $token = $this->postJson('/api/mobile/login', ['login' => 'EMP', 'password' => 'x'])->json('token');
+        foreach (['bills.zip', 'bills.xlsx', 'bill.docx'] as $name) {
+            $this->withToken($token)->post('/api/mobile/expenses', [
+                'claim_date' => '2026-09-02',
+                'lines' => [$line(['receipt' => \Illuminate\Http\UploadedFile::fake()->create($name, 20)])],
+            ], ['Accept' => 'application/json'])->assertStatus(422)->assertJsonValidationErrors('lines.0.receipt');
+        }
+        $this->assertSame(0, ExpenseClaim::count());
+
+        // Web form: the bill upload only accepts photos and PDFs.
+        $this->actingAs($user);
+        $page = \Livewire\Livewire::test(\App\Filament\Resources\ExpenseClaimResource\Pages\CreateExpenseClaim::class)->instance();
+        $repeater = collect($page->form->getFlatComponents(withHidden: true))->first(fn ($c) => $c instanceof \Filament\Forms\Components\Repeater);
+        $upload = collect($repeater->getChildComponentContainer()->getFlatComponents(withHidden: true))
+            ->first(fn ($c) => $c instanceof \Filament\Forms\Components\FileUpload);
+        $this->assertSame(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'], $upload->getAcceptedFileTypes());
+        $this->assertNotContains('application/zip', $upload->getAcceptedFileTypes());
+    }
+
     public function test_access_rules_and_downloads(): void
     {
         $this->claimWith([['2026-09-02', 100, 'expense-receipts/a.jpg', $this->jpeg(200, 300)]]);

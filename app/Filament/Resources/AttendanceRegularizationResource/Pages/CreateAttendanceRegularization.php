@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\AttendanceRegularizationResource\Pages;
 
+use App\Filament\Concerns\LocksEmployeeToSelf;
 use App\Filament\Concerns\PrefillsFromReapply;
 use App\Filament\Resources\AttendanceRegularizationResource;
 use App\Models\Employee;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 class CreateAttendanceRegularization extends CreateRecord
 {
     use PrefillsFromReapply;
+    use LocksEmployeeToSelf;
 
     protected static string $resource = AttendanceRegularizationResource::class;
 
@@ -33,5 +35,10 @@ class CreateAttendanceRegularization extends CreateRecord
     protected function reapplyFields(): array
     {
         return ['employee_id', 'attendance_date', 'request_type', 'requested_values', 'reason', 'attachment_path'];
+    }
+
+    protected function employeeOverridePermission(): string
+    {
+        return 'attendance.manage';
     }
 }

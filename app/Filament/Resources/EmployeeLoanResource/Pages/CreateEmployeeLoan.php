@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\EmployeeLoanResource\Pages;
 
+use App\Filament\Concerns\LocksEmployeeToSelf;
 use App\Filament\Concerns\PrefillsFromReapply;
 use App\Filament\Resources\EmployeeLoanResource;
 use App\Models\Employee;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 class CreateEmployeeLoan extends CreateRecord
 {
     use PrefillsFromReapply;
+    use LocksEmployeeToSelf;
 
     protected static string $resource = EmployeeLoanResource::class;
 
@@ -29,5 +31,10 @@ class CreateEmployeeLoan extends CreateRecord
     protected function reapplyFields(): array
     {
         return ['employee_id', 'type', 'requested_amount', 'reason'];
+    }
+
+    protected function employeeOverridePermission(): string
+    {
+        return 'loan.manage';
     }
 }
