@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ExpenseReceiptDownloadController;
+use App\Http\Controllers\ExpenseStatementDownloadController;
 use App\Http\Controllers\Form16DownloadController;
 use App\Http\Controllers\MyPayrollDownloadController;
 use App\Http\Controllers\PayslipDownloadController;
@@ -24,6 +25,14 @@ Route::get('/privacy-policy', fn () => view('privacy-policy', [
 Route::get('/payslips/{payslip}/download', PayslipDownloadController::class)
     ->middleware('auth')
     ->name('payslips.download');
+
+// Monthly expense statement: summary + all bills in one PDF (per employee), or a ZIP of all.
+Route::get('/reports/expense-statement/{employee}', [ExpenseStatementDownloadController::class, 'employee'])
+    ->middleware('auth')
+    ->name('reports.expense-statement');
+Route::get('/reports/expense-statements', [ExpenseStatementDownloadController::class, 'all'])
+    ->middleware('auth')
+    ->name('reports.expense-statements');
 
 Route::get('/reports/{type}/download', ReportDownloadController::class)
     ->middleware('auth')

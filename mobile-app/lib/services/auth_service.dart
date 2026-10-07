@@ -75,6 +75,16 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  /// Test / screenshot hook: start "signed in" without secure storage or a server.
+  @visibleForTesting
+  void debugSignIn({required String serverUrl, required Map<String, dynamic> user}) {
+    _serverUrl = serverUrl;
+    _api.baseUrl = serverUrl;
+    _api.token = 'debug-token';
+    _user = AppUser(user);
+    notifyListeners();
+  }
+
   static String normaliseServer(String url) {
     var s = url.trim();
     if (s.isEmpty) return AppConfig.defaultServerUrl;

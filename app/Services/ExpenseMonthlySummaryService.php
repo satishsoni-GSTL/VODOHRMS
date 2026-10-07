@@ -157,6 +157,14 @@ class ExpenseMonthlySummaryService
             ]);
     }
 
+    /** Whether $user may see $employeeId's expenses (HR-tier, or the employee / their reporting line). */
+    public function canViewEmployee(User $user, int $employeeId): bool
+    {
+        $visible = $this->visibleEmployeeIds($user);
+
+        return $visible === null || in_array($employeeId, $visible, true);
+    }
+
     /**
      * @return array<int, int>|null null means "no restriction" (HR-tier)
      */

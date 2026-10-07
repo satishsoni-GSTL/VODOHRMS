@@ -67,6 +67,13 @@ class ExpenseMonthlySummary extends Page implements HasTable
                 ->color('gray')
                 ->url(fn () => route('reports.download', ['type' => 'expense_monthly_summary', 'month' => $this->month]))
                 ->openUrlInNewTab(),
+            HeaderAction::make('allStatements')
+                ->label('All statements (ZIP)')
+                ->icon('heroicon-o-archive-box-arrow-down')
+                ->color('gray')
+                ->tooltip('One PDF per employee — expense summary followed by every attached bill')
+                ->url(fn () => route('reports.expense-statements', ['month' => $this->month]))
+                ->openUrlInNewTab(),
         ];
     }
 
@@ -109,6 +116,13 @@ class ExpenseMonthlySummary extends Page implements HasTable
                     ->state(fn (Employee $record) => $rowsByEmployee[$record->id]['total'] ?? 0),
             ])
             ->actions([
+                Tables\Actions\Action::make('statement')
+                    ->label('Statement (PDF)')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('primary')
+                    ->tooltip('Monthly expenses + all bills in one PDF, ready to share')
+                    ->url(fn (Employee $record) => route('reports.expense-statement', ['employee' => $record->id, 'month' => $this->month]))
+                    ->openUrlInNewTab(),
                 Tables\Actions\Action::make('viewDayWise')
                     ->label('View')
                     ->icon('heroicon-o-calendar-days')

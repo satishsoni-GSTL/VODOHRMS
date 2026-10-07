@@ -36,6 +36,7 @@ Route::prefix('mobile')->group(function () {
 
         Route::get('/expenses', [Mobile\ExpenseController::class, 'index']);
         Route::post('/expenses', [Mobile\ExpenseController::class, 'store']);
+        Route::get('/expenses/statement', [Mobile\ExpenseController::class, 'statement']);
         Route::get('/expenses/{claim}', [Mobile\ExpenseController::class, 'show']);
         Route::post('/expenses/{claim}/resubmit', [Mobile\ExpenseController::class, 'resubmit']);
         Route::get('/expense-lines/{line}/receipt', [Mobile\ExpenseController::class, 'receipt']);

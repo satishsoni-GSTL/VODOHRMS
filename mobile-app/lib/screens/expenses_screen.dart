@@ -22,6 +22,34 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     return data;
   }
 
+  /// Pick a month → download "summary + all bills" as one PDF and open it (share from the viewer).
+  Future<void> _statement() async {
+    final now = DateTime.now();
+    final months = List.generate(12, (i) => DateTime(now.year, now.month - i));
+
+    final picked = await showModalBottomSheet<DateTime>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: ListView(shrinkWrap: true, children: [
+          const ListTile(
+            title: Text('Monthly expense statement', style: TextStyle(fontWeight: FontWeight.w700)),
+            subtitle: Text('Your expenses for the month with every bill attached, in one PDF.'),
+          ),
+          for (final m in months)
+            ListTile(
+              leading: const Icon(Icons.calendar_month_outlined),
+              title: Text(monthLabel(ymd(m).substring(0, 7))),
+              onTap: () => Navigator.pop(ctx, m),
+            ),
+        ]),
+      ),
+    );
+
+    if (picked == null || !mounted) return;
+    final month = ymd(picked).substring(0, 7);
+    await downloadAndOpen(context, '/expenses/statement?month=$month', 'expense-statement-$month.pdf');
+  }
+
   Future<void> _newClaim() async {
     final lookups = _lookups ?? await _load();
     if (!mounted) return;
@@ -32,7 +60,16 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Expense Claims')),
+      appBar: AppBar(
+        title: const Text('Expense Claims'),
+        actions: [
+          IconButton(
+            tooltip: 'Monthly statement (PDF)',
+            icon: const Icon(Icons.picture_as_pdf_outlined),
+            onPressed: _statement,
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(onPressed: _newClaim, icon: const Icon(Icons.add), label: const Text('New claim')),
       body: AsyncView<Map<String, dynamic>>(
         key: _key,

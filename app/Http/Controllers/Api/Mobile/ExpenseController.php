@@ -83,6 +83,19 @@ class ExpenseController extends MobileController
         ]);
     }
 
+    /** My monthly expense statement: summary + every bill in one PDF, ready to share. */
+    public function statement(Request $request, \App\Services\ExpenseStatementService $statements): \Illuminate\Http\Response
+    {
+        $request->validate(['month' => ['required', 'date_format:Y-m']]);
+        $employee = $this->employee($request);
+        $month = $request->query('month');
+
+        return response($statements->build($employee, $month), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$statements->fileName($employee, $month).'"',
+        ]);
+    }
+
     /** Receipt image/PDF for one of my own lines (or one I may approve). */
     public function receipt(Request $request, ExpenseClaimLine $line): StreamedResponse
     {
