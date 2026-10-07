@@ -21,3 +21,7 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Firebase service-account keys (push notifications) - never commit
+/firebase*.json
+/storage/app/firebase*.json

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Adaptive app icon background (flutter_launcher_icons) -->
+    <color name="ic_launcher_background">#FFFFFF</color>
+    <!-- GlobalSpace teal (logo wordmark): push notification accent -->
+    <color name="brand_teal">#0C8481</color>
+</resources>

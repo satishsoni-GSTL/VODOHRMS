@@ -18,6 +18,18 @@ return [
         'token' => env('POSTMARK_TOKEN'),
     ],
 
+    // Push notifications to the employee mobile app (Firebase Cloud Messaging, HTTP v1).
+    // Path to the Firebase service-account JSON (Project settings → Service accounts →
+    // Generate new private key). Leave empty to disable push.
+    'firebase' => [
+        'credentials' => env('FIREBASE_CREDENTIALS'),
+    ],
+
+    // Contact address on the public /privacy-policy page (Play Store listing).
+    'privacy' => [
+        'contact' => env('PRIVACY_CONTACT_EMAIL'),
+    ],
+
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),

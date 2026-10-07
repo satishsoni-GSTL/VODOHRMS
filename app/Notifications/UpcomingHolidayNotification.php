@@ -11,7 +11,16 @@ class UpcomingHolidayNotification extends BaseNotification
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return $this->withPush($notifiable);
+    }
+
+    public function toPush(object $notifiable): ?array
+    {
+        return [
+            'title' => 'Upcoming holiday: '.trim($this->holiday->name),
+            'body' => $this->holiday->date->format('l, d M Y'),
+            'data' => ['screen' => 'holidays'],
+        ];
     }
 
     public function toMail(object $notifiable): MailMessage

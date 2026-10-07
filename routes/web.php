@@ -15,6 +15,12 @@ Route::get('/', function () {
     ]);
 });
 
+// Public privacy policy — required for the Google Play listing and linked from the app.
+Route::get('/privacy-policy', fn () => view('privacy-policy', [
+    'updated' => '7 October 2026',
+    'contact' => config('services.privacy.contact') ?: config('mail.from.address'),
+]))->name('privacy-policy');
+
 Route::get('/payslips/{payslip}/download', PayslipDownloadController::class)
     ->middleware('auth')
     ->name('payslips.download');

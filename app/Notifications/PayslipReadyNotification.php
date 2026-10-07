@@ -12,7 +12,18 @@ class PayslipReadyNotification extends BaseNotification
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return $this->withPush($notifiable);
+    }
+
+    public function toPush(object $notifiable): ?array
+    {
+        $month = Carbon::createFromFormat('Y-m', $this->run->payroll_month)->format('F Y');
+
+        return [
+            'title' => "Payslip ready — {$month}",
+            'body' => "Your salary slip for {$month} is available in the app.",
+            'data' => ['screen' => 'payslips'],
+        ];
     }
 
     public function toMail(object $notifiable): MailMessage

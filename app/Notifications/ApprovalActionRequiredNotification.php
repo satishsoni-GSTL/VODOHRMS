@@ -19,7 +19,16 @@ class ApprovalActionRequiredNotification extends BaseNotification
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return $this->withPush($notifiable);
+    }
+
+    public function toPush(object $notifiable): ?array
+    {
+        return [
+            'title' => 'Approval needed: '.$this->moduleLabel($this->requestable->getApprovalModule()),
+            'body' => trim(preg_replace('/\s+/', ' ', $this->requestingEmployee->full_name))." ({$this->requestingEmployee->employee_code}) is waiting for your approval.",
+            'data' => ['screen' => 'approvals'],
+        ];
     }
 
     public function toMail(object $notifiable): MailMessage

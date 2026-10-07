@@ -14,7 +14,7 @@ class FnfSettlementNotification extends BaseNotification
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return $this->withPush($notifiable);
     }
 
     public function toMail(object $notifiable): MailMessage

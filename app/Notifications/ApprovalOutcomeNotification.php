@@ -19,7 +19,34 @@ class ApprovalOutcomeNotification extends BaseNotification
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return $this->withPush($notifiable);
+    }
+
+    public function toPush(object $notifiable): ?array
+    {
+        $module = $this->requestable->getApprovalModule();
+        $label = $this->moduleLabel($module);
+
+        $title = match ($this->outcome) {
+            'approved' => "{$label} approved",
+            'rejected' => "{$label} rejected",
+            'sent_back' => "{$label} sent back for changes",
+            default => "{$label} updated",
+        };
+
+        return [
+            'title' => $title,
+            'body' => $this->remarks ? "Remarks: {$this->remarks}" : "Your {$label} request has been {$this->outcome}.",
+            'data' => [
+                'screen' => match ($module) {
+                    \App\Models\WorkflowDefinition::MODULE_EXPENSE => 'expenses',
+                    \App\Models\WorkflowDefinition::MODULE_LOAN => 'loans',
+                    \App\Models\WorkflowDefinition::MODULE_RESIGNATION => 'home',
+                    default => 'requests',
+                },
+                'module' => $module,
+            ],
+        ];
     }
 
     public function toMail(object $notifiable): MailMessage
