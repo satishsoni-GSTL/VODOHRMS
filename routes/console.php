@@ -9,3 +9,5 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('hr:send-daily-reminders')->dailyAt('08:00');
+// Personal birthday / work-anniversary wish pushed to the celebrant's phone.
+Schedule::command('hr:send-celebration-wishes')->dailyAt('09:00');

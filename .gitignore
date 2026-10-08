@@ -30,3 +30,7 @@ yarn-error.log
 /device-agent/config.ini
 /device-agent/last_sync.json
 /device-agent/sync_agent.log
+
+# Firebase keys for push:setup (never commit)
+/firebase-keys/
+/firebase-debug.log

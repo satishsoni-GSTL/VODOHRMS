@@ -64,10 +64,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           final holidays = (data['upcoming_holidays'] as List).cast<Map<String, dynamic>>();
           final approvals = (data['approvals_waiting'] as num?)?.toInt() ?? 0;
           final celebrations = ((data['celebrations'] as List?) ?? const []).cast<Map<String, dynamic>>();
+          final myWishes = ((data['my_wishes'] as List?) ?? const []).cast<Map<String, dynamic>>();
 
           return ListView(
             padding: const EdgeInsets.only(bottom: 24),
             children: [
+              for (final wish in myWishes) _WishCard(wish: wish),
               _TodayCard(today: today, onClock: _clock, onOpen: () => widget.onOpenTab('attendance')),
               if (approvals > 0)
                 Card(
@@ -373,6 +375,48 @@ class _Celebrations extends StatelessWidget {
           ),
         ),
     ]);
+  }
+}
+
+/// The employee's own birthday / work-anniversary wish — shown at the top of Home all day.
+class _WishCard extends StatelessWidget {
+  const _WishCard({required this.wish});
+
+  final Map<String, dynamic> wish;
+
+  @override
+  Widget build(BuildContext context) {
+    final birthday = wish['type'] == 'birthday';
+    final colors = birthday
+        ? const [Brand.red, Brand.orange, Brand.yellow]
+        : const [Brand.tealDark, Brand.teal, Brand.blue];
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: colors, begin: Alignment.topLeft, end: Alignment.bottomRight),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [BoxShadow(color: colors[1].withValues(alpha: 0.35), blurRadius: 16, offset: const Offset(0, 6))],
+      ),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(birthday ? '🎂' : '🎉', style: const TextStyle(fontSize: 44)),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(
+              (wish['title'] as String?) ?? '',
+              style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800, height: 1.25),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              (wish['message'] as String?) ?? '',
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.95), height: 1.35),
+            ),
+          ]),
+        ),
+      ]),
+    );
   }
 }
 

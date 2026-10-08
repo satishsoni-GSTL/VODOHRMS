@@ -97,6 +97,24 @@ class FirebasePushService
     }
 
     /**
+     * Proves the service-account key works by getting a real OAuth token from Google.
+     * Returns the Firebase project id; throws with Google's error otherwise.
+     */
+    public function verifyCredentials(): string
+    {
+        $credentials = $this->credentials();
+
+        if (! $credentials) {
+            throw new \RuntimeException('FIREBASE_CREDENTIALS is not set, or the file is missing / not a service-account key.');
+        }
+
+        Cache::forget('fcm_access_token_'.md5($credentials['client_email']));
+        $this->accessToken($credentials);
+
+        return $credentials['project_id'];
+    }
+
+    /**
      * OAuth2 access token for FCM, from a self-signed service-account JWT (RS256).
      * Cached for 50 minutes (Google issues 60-minute tokens).
      */

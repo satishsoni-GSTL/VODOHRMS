@@ -72,6 +72,8 @@ class ProfileController extends MobileController
             'my_pending' => $pending,
             'approvals_waiting' => ApprovalController::actionable($this->user($request))->count(),
             'upcoming_holidays' => $holidays,
+            // The signed-in employee's own birthday / work-anniversary wish, shown as a card all day.
+            'my_wishes' => app(\App\Services\CelebrationWishService::class)->wishesFor($employee)->values(),
             // Company-wide (all teams): today's and the coming week's birthdays & work anniversaries.
             'celebrations' => app(CelebrationService::class)->upcoming($employee, 7)->map(fn (array $c) => [
                 'type' => $c['type'],

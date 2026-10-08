@@ -33,6 +33,18 @@ class NotificationTemplateSeeder extends Seeder
             'placeholders_help' => 'Available: {employee_name}, {years}',
         ],
         [
+            'key' => 'birthday_wish',
+            'subject' => 'Happy Birthday, {first_name}! 🎂',
+            'body' => 'Wishing you a fantastic year ahead, filled with happiness, good health and success. Have a wonderful day! — Team GlobalSpace',
+            'placeholders_help' => 'Mobile app wish to the birthday person at 9 AM (subject = title). Available: {first_name}, {employee_name}',
+        ],
+        [
+            'key' => 'work_anniversary_wish',
+            'subject' => 'Happy {years}-Year Work Anniversary, {first_name}! 🎉',
+            'body' => "Thank you for {years} wonderful year(s) with GlobalSpace. Your hard work and dedication make a real difference — here's to many more! — Team GlobalSpace",
+            'placeholders_help' => 'Mobile app wish to the employee at 9 AM on their work anniversary (subject = title). Available: {first_name}, {employee_name}, {years}',
+        ],
+        [
             'key' => 'upcoming_holiday',
             'subject' => 'Upcoming Holiday: {holiday_name}',
             'body' => "Tomorrow, {holiday_date}, is a holiday: {holiday_name}.\nPlan your work accordingly.",

@@ -11,7 +11,8 @@ class WorkAnniversaryNotification extends BaseNotification
 
     public function via(object $notifiable): array
     {
-        return $this->withPush($notifiable);
+        // The celebrant gets their personal wish on the app at 9 AM instead (hr:send-celebration-wishes).
+        return ($notifiable->employee_id ?? null) === $this->celebrant->id ? ['mail'] : $this->withPush($notifiable);
     }
 
     public function toMail(object $notifiable): MailMessage
