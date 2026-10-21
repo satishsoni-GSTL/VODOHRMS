@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Company;
 use App\Models\PayrollRunEmployee;
 use App\Models\PayrollRunEmployeeLine;
 use App\Models\Payslip;
@@ -26,10 +27,17 @@ class PayslipService
 
         [$ytdEarnings, $ytdTds] = $this->yearToDateTotals($employee->id, $payrollMonth);
 
+        $monthStart = Carbon::createFromFormat('Y-m-d', $payrollMonth.'-01');
+        $annualCtc = $runEmployee->salaryStructure?->annual_ctc
+            ?? $employee->currentSalaryStructure()?->annual_ctc;
+
         $pdf = Pdf::loadView('payroll.payslip', [
             'employee' => $employee,
             'company' => $employee->company,
-            'monthLabel' => Carbon::createFromFormat('Y-m', $payrollMonth)->format('F Y'),
+            'logo' => $this->logoDataUri($employee->company),
+            'monthLabel' => $monthStart->format('F Y'),
+            'payPeriod' => $monthStart->format('d M Y').' to '.$monthStart->copy()->endOfMonth()->format('d M Y'),
+            'annualCtc' => $annualCtc,
             'runEmployee' => $runEmployee,
             'earningLines' => $earningLines,
             'deductionLines' => $deductionLines,
@@ -53,6 +61,29 @@ class PayslipService
                 'generated_at' => now(),
             ]
         );
+    }
+
+    /**
+     * Embedded as a data URI so dompdf needs no remote/chroot access.
+     * Falls back to the bundled Globalspace logo when the company has none.
+     */
+    private function logoDataUri(?Company $company): ?string
+    {
+        $path = null;
+
+        if ($company?->logo_path && Storage::disk('public')->exists($company->logo_path)) {
+            $path = Storage::disk('public')->path($company->logo_path);
+        } elseif (is_file(public_path('images/globalspace-logo.png'))) {
+            $path = public_path('images/globalspace-logo.png');
+        }
+
+        if (! $path) {
+            return null;
+        }
+
+        $mime = mime_content_type($path) ?: 'image/png';
+
+        return 'data:'.$mime.';base64,'.base64_encode(file_get_contents($path));
     }
 
     /**

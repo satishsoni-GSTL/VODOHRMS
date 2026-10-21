@@ -226,6 +226,19 @@ out. Keep `build\symbols` for each version.
 
 ---
 
+### Automatic in-app updates
+
+Starting with the build that includes `UpdateService`, the app checks Play on launch and
+on resume. When a newer version is live, Play asks the employee once, downloads it in the
+background, and the app installs it silently the next time it is backgrounded. If they
+return before that, a "Restart" snackbar lets them install it right away.
+
+- It works only for installs from Play. You can test it with **Internal app sharing** or an
+  internal testing track by installing an older build, then publishing a newer one.
+- For a must-have fix, set the release's in-app update priority to 4 or 5 through the Play
+  Developer API (`inAppUpdatePriority`). The Play Console has no field for it. The app then
+  shows Play's full-screen update, which blocks use until the update is installed.
+
 ## iPhone (later)
 
 The code supports iOS. Publishing on the App Store needs:

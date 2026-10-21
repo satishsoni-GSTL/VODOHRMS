@@ -3,76 +3,115 @@
 <head>
     <meta charset="utf-8">
     <style>
-        body { font-family: sans-serif; font-size: 12px; color: #1f2937; }
-        .header { text-align: center; margin-bottom: 16px; }
-        .header h1 { font-size: 16px; margin: 0; }
-        .header p { margin: 2px 0; color: #6b7280; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
-        td, th { padding: 4px 6px; border: 1px solid #d1d5db; text-align: left; }
-        .meta-table td { border: none; padding: 2px 6px; }
-        .totals td { font-weight: bold; }
-        .section-title { font-weight: bold; margin-top: 12px; margin-bottom: 4px; }
-        .net-pay { margin-top: 16px; padding: 8px; background: #f3f4f6; font-weight: bold; }
+        @page { margin: 40px 48px; }
+        body { font-family: 'DejaVu Sans', sans-serif; font-size: 11px; color: #000; }
+        table { width: 100%; border-collapse: collapse; }
+        .brand td { vertical-align: middle; padding: 0; }
+        .brand img { height: 38px; }
+        .brand .company-name { font-size: 13px; color: #4a7fb5; }
+        .brand .company-address { font-size: 8px; font-weight: bold; color: #333; text-transform: uppercase; }
+        .title { text-align: center; font-size: 18px; font-weight: bold; margin: 18px 0 10px; }
+        .section { font-size: 13px; font-weight: bold; text-decoration: underline; margin: 14px 0 6px; }
+        .details td { padding: 3px 0; width: 50%; }
+        .grid th, .grid td { border: 1px solid #000; padding: 5px 6px; }
+        .grid th { font-size: 12px; text-align: center; }
+        .grid th.amount, .grid td.amount { text-align: right; }
+        .grid .total td { font-weight: bold; }
+        .words { margin-top: 12px; }
+        .footer { margin-top: 24px; text-align: center; font-size: 9px; font-style: italic; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>{{ $company->name ?? 'VODOHRMS' }}</h1>
-        <p>Payslip for {{ $monthLabel }}</p>
-    </div>
+    @php
+        $earnings = $earningLines->values();
+        $deductions = $deductionLines->values();
+        $rows = max($earnings->count(), $deductions->count());
+        $money = fn ($v) => number_format((float) $v, 2);
+    @endphp
 
-    <table class="meta-table">
+    <table class="brand">
         <tr>
-            <td><strong>Employee Name:</strong> {{ $employee->full_name }}</td>
-            <td><strong>Employee Code:</strong> {{ $employee->employee_code }}</td>
-        </tr>
-        <tr>
-            <td><strong>Department:</strong> {{ $employee->department?->name }}</td>
-            <td><strong>Designation:</strong> {{ $employee->designation?->name }}</td>
-        </tr>
-        <tr>
-            <td><strong>PAN:</strong> {{ $pan }}</td>
-            <td><strong>UAN:</strong> {{ $uan }}</td>
-        </tr>
-        <tr>
-            <td><strong>Bank Account:</strong> {{ $maskedAccount }}</td>
-            <td><strong>Paid Days / LOP:</strong> {{ $runEmployee->paid_days }} /
-                {{ $runEmployee->lop_days }}{{ $runEmployee->lop_amount > 0 ? ' (−₹'.number_format($runEmployee->lop_amount, 2).')' : '' }}
+            @if ($logo)
+                <td style="width: 45%;"><img src="{{ $logo }}" alt=""></td>
+            @endif
+            <td>
+                <div class="company-name">{{ $company->name ?? 'VODOHRMS' }}</div>
+                @if ($company?->address)
+                    <div class="company-address">{{ $company->address }}</div>
+                @endif
             </td>
         </tr>
     </table>
 
-    <div class="section-title">Earnings</div>
-    <table>
-        <thead><tr><th>Component</th><th>Amount</th></tr></thead>
-        <tbody>
-            @foreach ($earningLines as $line)
-                <tr><td>{{ $line->label }}</td><td>{{ number_format($line->amount, 2) }}</td></tr>
-            @endforeach
-            <tr class="totals"><td>Gross Earnings</td><td>{{ number_format($runEmployee->gross_earnings, 2) }}</td></tr>
-        </tbody>
-    </table>
+    <div class="title">SALARY SLIP – {{ strtoupper($monthLabel) }}</div>
 
-    <div class="section-title">Deductions</div>
-    <table>
-        <thead><tr><th>Component</th><th>Amount</th></tr></thead>
-        <tbody>
-            @foreach ($deductionLines as $line)
-                <tr><td>{{ $line->label }}</td><td>{{ number_format($line->amount, 2) }}</td></tr>
-            @endforeach
-            <tr class="totals"><td>Total Deductions</td><td>{{ number_format($runEmployee->total_deductions, 2) }}</td></tr>
-        </tbody>
-    </table>
-
-    <div class="net-pay">
-        Net Salary: ₹{{ number_format($runEmployee->net_pay, 2) }} ({{ $netPayInWords }})
-    </div>
-
-    <table style="margin-top: 12px;">
+    <div class="section">EMPLOYEE DETAILS</div>
+    <table class="details">
         <tr>
-            <td><strong>YTD Earnings:</strong> {{ number_format($ytdEarnings, 2) }}</td>
-            <td><strong>YTD TDS:</strong> {{ number_format($ytdTds, 2) }}</td>
+            <td><strong>Employee Code:</strong> {{ $employee->employee_code }}</td>
+            <td><strong>Department:</strong> {{ $employee->department?->name }}</td>
+        </tr>
+        <tr>
+            <td><strong>Employee Name:</strong> {{ $employee->full_name }}</td>
+            <td><strong>Designation:</strong> {{ $employee->designation?->name }}</td>
+        </tr>
+        <tr>
+            <td><strong>Pay Period:</strong> {{ $payPeriod }}</td>
+            <td><strong>Annual CTC:</strong> {{ $annualCtc !== null ? '₹'.$money($annualCtc) : '—' }}</td>
         </tr>
     </table>
+
+    <table style="margin-top: 14px;">
+        <tr>
+            <td class="section" style="width: 51%; margin: 0;">EARNINGS</td>
+            <td class="section" style="margin: 0;">DEDUCTIONS</td>
+        </tr>
+    </table>
+    <table class="grid">
+        <thead>
+            <tr>
+                <th style="width: 32%;">Particulars</th>
+                <th class="amount" style="width: 19%;">Amount (₹)</th>
+                <th style="width: 29%;">Particulars</th>
+                <th class="amount" style="width: 20%;">Amount (₹)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for ($i = 0; $i < $rows; $i++)
+                <tr>
+                    <td>{{ $earnings[$i]->label ?? '' }}</td>
+                    <td class="amount">{{ isset($earnings[$i]) ? $money($earnings[$i]->amount) : '' }}</td>
+                    <td>{{ $deductions[$i]->label ?? '' }}</td>
+                    <td class="amount">{{ isset($deductions[$i]) ? $money($deductions[$i]->amount) : '' }}</td>
+                </tr>
+            @endfor
+            <tr class="total">
+                <td>GROSS SALARY</td>
+                <td class="amount">{{ $money($runEmployee->gross_earnings) }}</td>
+                <td>TOTAL DEDUCTIONS</td>
+                <td class="amount">{{ $money($runEmployee->total_deductions) }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="section">NET SALARY</div>
+    <table class="grid">
+        <thead>
+            <tr>
+                <th style="width: 51%;">Particulars</th>
+                <th class="amount">Amount (₹)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="total">
+                <td>Net In-Hand Salary</td>
+                <td class="amount">{{ $money($runEmployee->net_pay) }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="words"><strong>Net Salary (In Words):</strong> {{ $netPayInWords }}</div>
+
+    <div class="footer">(This is a computer-generated salary slip and does not require a physical signature.)</div>
 </body>
 </html>

@@ -5,6 +5,7 @@ import 'screens/home_shell.dart';
 import 'screens/login_screen.dart';
 import 'services/auth_service.dart';
 import 'services/push_service.dart';
+import 'services/update_service.dart';
 import 'theme.dart';
 
 Future<void> main() async {
@@ -12,6 +13,7 @@ Future<void> main() async {
   await AuthService.instance.load();
   await PushService.instance.init(); // no-op unless Firebase keys were provided at build time
   runApp(const VodoHrmsApp());
+  UpdateService.instance.start(); // background Play updates (Android release builds only)
 }
 
 class VodoHrmsApp extends StatelessWidget {
@@ -22,6 +24,7 @@ class VodoHrmsApp extends StatelessWidget {
     return MaterialApp(
       title: AppConfig.appName,
       debugShowCheckedModeBanner: false,
+      scaffoldMessengerKey: UpdateService.instance.scaffoldMessengerKey,
       theme: buildTheme(Brightness.light),
       darkTheme: buildTheme(Brightness.dark),
       // Signed in once on this phone → straight into the app. If the token is revoked or
