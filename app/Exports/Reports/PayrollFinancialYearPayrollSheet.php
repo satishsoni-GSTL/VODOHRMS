@@ -19,7 +19,7 @@ class PayrollFinancialYearPayrollSheet implements FromCollection, WithHeadings, 
 
     public function headings(): array
     {
-        return ['Payroll Month', 'Employee Code', 'Name', 'Department', 'Paid Days', 'LOP Days', 'Gross Earnings', 'Total Deductions', 'Employer Contributions', 'Net Pay', 'Status'];
+        return ['Payroll Month', 'Employee Code', 'Name', 'Department', 'Paid Days', 'LOP Days', 'LOP Amount', 'Gross Earnings', 'Total Deductions', 'Employer Contributions', 'Net Pay', 'Status'];
     }
 
     public function collection()
@@ -39,6 +39,7 @@ class PayrollFinancialYearPayrollSheet implements FromCollection, WithHeadings, 
                 $runEmployee->employee?->department?->name,
                 $runEmployee->paid_days,
                 $runEmployee->lop_days,
+                $runEmployee->lop_amount,
                 $runEmployee->gross_earnings,
                 $runEmployee->total_deductions,
                 $runEmployee->employer_contributions,

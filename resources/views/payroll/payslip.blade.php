@@ -59,6 +59,10 @@
             <td><strong>Pay Period:</strong> {{ $payPeriod }}</td>
             <td><strong>Annual CTC:</strong> {{ $annualCtc !== null ? '₹'.$money($annualCtc) : '—' }}</td>
         </tr>
+        <tr>
+            <td><strong>Paid Days:</strong> {{ rtrim(rtrim(number_format((float) $runEmployee->paid_days, 2), '0'), '.') }}</td>
+            <td><strong>LOP Days:</strong> {{ rtrim(rtrim(number_format((float) $runEmployee->lop_days, 2), '0'), '.') }}</td>
+        </tr>
     </table>
 
     <table style="margin-top: 14px;">

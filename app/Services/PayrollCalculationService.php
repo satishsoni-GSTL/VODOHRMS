@@ -31,6 +31,9 @@ class PayrollCalculationService
      */
     private const DEFAULT_WEEKLY_OFF = ['saturday', 'sunday'];
 
+    /** Deduction line carrying the LOP amount — earnings are paid in full for LOP days and docked here. */
+    public const LOP_LABEL = 'Loss of Pay (LOP)';
+
     public function __construct(
         private readonly IncomeTaxCalculationService $incomeTax,
         private readonly LoanService $loans,
@@ -99,6 +102,9 @@ class PayrollCalculationService
             $lopDays = 0.0;
         }
         $prorationFactor = $totalDaysInMonth > 0 ? $paidDays / $totalDaysInMonth : 0;
+        // Earnings are prorated only for days outside employment (joining / last working
+        // date); LOP days are paid here and recovered as a separate LOP deduction line.
+        $earningProrationFactor = $totalDaysInMonth > 0 ? ($paidDays + $lopDays) / $totalDaysInMonth : 0;
 
         $runEmployee = PayrollRunEmployee::updateOrCreate(
             ['payroll_run_id' => $run->id, 'employee_id' => $employee->id],
@@ -147,8 +153,9 @@ class PayrollCalculationService
                     // max ₹3,000), so a rate/cap change applies to the next payroll.
                     $amount = $component->amountFromBasic($earnedBasic);
                 } else {
+                    $factor = $component->type === SalaryComponent::TYPE_EARNING ? $earningProrationFactor : $prorationFactor;
                     $amount = $component->is_prorated
-                        ? round((float) $line->monthly_amount * $prorationFactor, 2)
+                        ? round((float) $line->monthly_amount * $factor, 2)
                         : (float) $line->monthly_amount;
 
                     if ($component->type !== SalaryComponent::TYPE_EARNING && $component->max_amount !== null) {
@@ -179,6 +186,17 @@ class PayrollCalculationService
         // Only true LOP days — days after the last working date are unpaid but aren't LOP.
         $lopAmount = $totalDaysInMonth > 0 ? round($fullMonthProratable * $lopDays / $totalDaysInMonth, 2) : 0.0;
 
+        if ($lopAmount > 0) {
+            $runEmployee->lines()->create([
+                'salary_component_id' => null,
+                'label' => self::LOP_LABEL,
+                'amount' => $lopAmount,
+                'component_type' => SalaryComponent::TYPE_DEDUCTION,
+            ]);
+
+            $totalDeductions += $lopAmount;
+        }
+
         foreach (PayrollInput::where('employee_id', $employee->id)->where('payroll_month', $run->payroll_month)->get() as $input) {
             $amount = (float) $input->amount;
             $isEarning = in_array($input->type, PayrollInput::EARNING_TYPES, true);
@@ -204,8 +222,8 @@ class PayrollCalculationService
         }
 
         // Persist gross earnings before projecting tax, since the projection sums this
-        // month's gross_earnings from the database to build year-to-date income.
-        $runEmployee->update(['gross_earnings' => round($grossEarnings, 2)]);
+        // month's gross_earnings (less lop_amount) from the database to build year-to-date income.
+        $runEmployee->update(['gross_earnings' => round($grossEarnings, 2), 'lop_amount' => $lopAmount]);
 
         $financialYear = $this->incomeTax->financialYearForMonth($run->payroll_month);
 
@@ -240,7 +258,6 @@ class PayrollCalculationService
         }
 
         $runEmployee->update([
-            'lop_amount' => $lopAmount,
             'total_deductions' => round($totalDeductions, 2),
             'employer_contributions' => round($employerContributions, 2),
             'net_pay' => round($grossEarnings - $totalDeductions, 2),

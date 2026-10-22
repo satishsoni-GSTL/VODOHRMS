@@ -102,6 +102,19 @@ class PayrollLwpAndLastWorkingDateTest extends TestCase
         $this->assertEquals(28, (float) $row->paid_days);
         $this->assertEquals(2, (float) $row->lop_days);
         $this->assertEqualsWithDelta(2000, (float) $row->lop_amount, 0.01); // 30000 × 2/30
+
+        // LOP is docked from net pay as its own deduction line; gross stays at the full month.
+        $this->assertEqualsWithDelta(30000, (float) $row->gross_earnings, 0.01);
+        $lopLine = $row->lines->firstWhere('label', \App\Services\PayrollCalculationService::LOP_LABEL);
+        $this->assertNotNull($lopLine);
+        $this->assertSame(\App\Models\SalaryComponent::TYPE_DEDUCTION, $lopLine->component_type);
+        $this->assertEqualsWithDelta(2000, (float) $lopLine->amount, 0.01);
+        $this->assertEqualsWithDelta(
+            (float) $row->gross_earnings - (float) $row->total_deductions,
+            (float) $row->net_pay,
+            0.01
+        );
+        $this->assertLessThanOrEqual(28000, (float) $row->net_pay);
     }
 
     public function test_lwp_is_unpaid_even_if_flagged_paid(): void

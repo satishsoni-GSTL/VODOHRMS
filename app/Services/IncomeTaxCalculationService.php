@@ -15,6 +15,7 @@ use App\Models\TaxRegimeConfig;
 use App\Models\TaxRegimeSlab;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class IncomeTaxCalculationService
 {
@@ -115,7 +116,8 @@ class IncomeTaxCalculationService
             ->whereHas('payrollRun', function ($q) use ($fyMonths, $payrollMonth) {
                 $q->whereIn('payroll_month', $fyMonths)->where('payroll_month', '<=', $payrollMonth);
             })
-            ->sum('gross_earnings');
+            // Gross includes LOP days' pay; the LOP deduction claws it back, so it isn't income.
+            ->sum(DB::raw('gross_earnings - lop_amount'));
 
         $remainingMonths = count(array_filter($fyMonths, fn ($m) => $m > $payrollMonth));
         $currentMonthlyGross = (float) ($employee->currentSalaryStructure()?->monthly_gross ?? 0);
@@ -269,7 +271,7 @@ class IncomeTaxCalculationService
             ->with('payrollRun:id,payroll_month')
             ->get()
             ->groupBy(fn (PayrollRunEmployee $row) => $row->payrollRun->payroll_month)
-            ->map(fn ($rows) => (float) $rows->sum('gross_earnings'));
+            ->map(fn ($rows) => (float) $rows->sum(fn ($row) => (float) $row->gross_earnings - (float) $row->lop_amount));
 
         $monthlyGross = (float) ($employee->currentSalaryStructure()?->monthly_gross ?? 0);
         $joinedMonth = $employee->date_of_joining ? Carbon::parse($employee->date_of_joining)->format('Y-m') : null;
