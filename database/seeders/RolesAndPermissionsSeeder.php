@@ -24,6 +24,7 @@ class RolesAndPermissionsSeeder extends Seeder
         'resignation.view', 'resignation.manage',
         'exit.manage', 'fnf.process',
         'policy.manage',
+        'fileshare.manage',
         'notification.manage', 'notification.view',
     ];
 
@@ -43,6 +44,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'resignation.view', 'resignation.manage',
             'exit.manage', 'fnf.process',
             'policy.manage',
+            'fileshare.manage',
             'notification.manage', 'notification.view',
         ],
         'HR Executive' => [

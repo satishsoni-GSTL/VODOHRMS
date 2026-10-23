@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Employee;
 use App\Models\PayrollRunEmployee;
 use App\Models\SalaryComponent;
 use App\Services\PayrollCalculationService;
@@ -104,7 +105,10 @@ class RestateLopAsDeduction extends Command
             });
 
             if ($row->payslip) {
-                $payslips->generate($row->fresh());
+                // Payslips of since-deleted (soft-deleted) employees are regenerated too.
+                $fresh = $row->fresh();
+                $fresh->setRelation('employee', Employee::withTrashed()->find($row->employee_id));
+                $payslips->generate($fresh);
             }
         }
 

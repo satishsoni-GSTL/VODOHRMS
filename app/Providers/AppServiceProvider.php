@@ -32,6 +32,7 @@ use App\Models\PayrollInput;
 use App\Models\PayrollRun;
 use App\Models\PolicyDocument;
 use App\Models\SalaryComponent;
+use App\Models\SharedFile;
 use App\Models\Shift;
 use App\Models\SubDepartment;
 use App\Models\TaxRegimeConfig;
@@ -49,14 +50,18 @@ use App\Policies\OrganizationPolicy;
 use App\Policies\PayrollMasterPolicy;
 use App\Policies\PayrollRunPolicy;
 use App\Policies\PolicyDocumentPolicy;
+use App\Policies\SharedFilePolicy;
 use App\Policies\TaxMasterPolicy;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Notifications\Events\NotificationSending;
 use Illuminate\Notifications\Events\NotificationSent;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -114,11 +119,22 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::policy(PolicyDocument::class, PolicyDocumentPolicy::class);
 
+        Gate::policy(SharedFile::class, SharedFilePolicy::class);
+
         Gate::policy(NotificationTemplate::class, NotificationTemplatePolicy::class);
         Gate::policy(NotificationLog::class, NotificationLogPolicy::class);
 
         $this->registerNotificationLogging();
         $this->registerMicrosoftGraphMailTransport();
+        $this->registerFileShareRateLimits();
+    }
+
+    /** Per-IP limits for the public share pages (routes/fileshare.php). */
+    private function registerFileShareRateLimits(): void
+    {
+        RateLimiter::for('fileshare', fn (Request $request) => Limit::perMinute(60)->by($request->ip()));
+        RateLimiter::for('fileshare-code', fn (Request $request) => Limit::perMinute(10)->by($request->ip()));
+        RateLimiter::for('fileshare-comment', fn (Request $request) => Limit::perMinute(20)->by($request->ip()));
     }
 
     /**

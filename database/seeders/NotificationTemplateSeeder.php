@@ -98,6 +98,24 @@ class NotificationTemplateSeeder extends Seeder
             'body' => "{event_label}.\nFinal settlement amount: {final_amount}",
             'placeholders_help' => 'Available: {event_label}, {final_amount}',
         ],
+        [
+            'key' => 'shared_file_invitation',
+            'subject' => '{owner_name} shared "{file_title}" with you',
+            'body' => "Hi {recipient_name}, {owner_name} has shared a file with you.\nFile: {file_title} ({file_name})\n{message}\nYou will be asked to confirm a one-time code sent to this email address before the file opens.\n{expiry_line}",
+            'placeholders_help' => 'Link button is added automatically. Available: {recipient_name}, {owner_name}, {file_title}, {file_name}, {message}, {expiry_line}',
+        ],
+        [
+            'key' => 'shared_file_otp',
+            'subject' => 'Your access code for "{file_title}"',
+            'body' => "Hi {recipient_name}, use this code to open the file shared with you:\n{otp}\nThis code expires in {minutes} minutes.\nIf you didn't request this, you can ignore this email.",
+            'placeholders_help' => 'Available: {recipient_name}, {file_title}, {otp}, {minutes}',
+        ],
+        [
+            'key' => 'shared_file_comment',
+            'subject' => 'New {comment_kind} on "{file_title}"',
+            'body' => "{author_name} posted a {comment_kind} on \"{file_title}\":\n\"{comment_excerpt}\"",
+            'placeholders_help' => 'Link button is added automatically. Available: {author_name}, {comment_kind} (comment/reply), {file_title}, {comment_excerpt}',
+        ],
     ];
 
     public function run(): void

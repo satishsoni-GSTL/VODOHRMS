@@ -7,6 +7,7 @@ use App\Http\Controllers\MyPayrollDownloadController;
 use App\Http\Controllers\PayslipDownloadController;
 use App\Http\Controllers\PolicyDocumentDownloadController;
 use App\Http\Controllers\ReportDownloadController;
+use App\Http\Controllers\SharedFileDownloadController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -53,3 +54,8 @@ Route::get('/expense-receipts/{expenseClaimLine}/download', ExpenseReceiptDownlo
 Route::get('/form16/{form16}/download', Form16DownloadController::class)
     ->middleware('auth')
     ->name('form16.download');
+
+// Owner/HR download of a shared file from inside the portal (recipients use the share domain).
+Route::get('/shared-files/{sharedFile}/download', SharedFileDownloadController::class)
+    ->middleware('auth')
+    ->name('shared-files.download');

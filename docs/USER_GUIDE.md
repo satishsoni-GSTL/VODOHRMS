@@ -119,6 +119,10 @@ Exit Management                                 [resignation.manage / exit.manag
   Exit Clearance
   Full & Final Settlement
 
+File Sharing
+  My Shared Files                                [everyone: own files; fileshare.manage (HR Admin) sees all]
+  Shared With Me                                 [everyone: files shared to your login email]
+
 Roles & Permissions
   Audit Logs                                     [audit.view — Super Admin only in the default seed]
 
@@ -204,6 +208,15 @@ Employee: **Loans & Advances → New** → chain **Employee → Reporting Manage
 ### 7.9 Reports & audit
 - **Reports** page: pick a month, click the card for the report you need (Employee Master / Attendance / Leave / Expense / Payroll / Loans) — downloads an `.xlsx`. Team-scoped reports follow the same visibility rule as §3; Employee Master and Payroll reports are HR/Payroll/Finance-tier only regardless of team.
 - **Audit Logs** (Super Admin only by default): read-only before/after trail for every sensitive change — employee master edits, bank/statutory detail changes (logged as ciphertext, never plaintext, since those fields are encrypted at the model level), salary structure revisions, every workflow create/approve/reject/send-back across Leave/Regularization/Expense/Loan/Resignation, and every payroll finalize/lock/reopen.
+
+### 7.10 Share a file with internal or external people
+1. **File Sharing → My Shared Files → Share a file** — upload the file, add a title and an optional message, set an optional expiry, and choose whether recipients may download it.
+2. Under **Share with**, add one row per person: pick an internal user (fills email/name) or type any external email. Untick **Can comment** for view-only people.
+3. Save. Each person is emailed their own private link on `file.globalspace.in`. Opening it asks them to request a **6-digit code**, which is emailed to that same address (valid 10 minutes, 5 wrong tries max, 3 codes per 10 minutes). A forwarded link is useless without access to that mailbox.
+4. Once verified, they can preview (PDF, images, audio/video, text), download (if allowed), and post comments or replies. Verification lasts 12 hours in that browser.
+5. The owner sees everything on the file's page: **People with access** (add person, resend invite, copy link, revoke/restore), **Comments** (add comment, reply — everyone in the thread is emailed), and **Activity** (codes sent, wrong codes, views, downloads, with IP).
+6. **Edit** the file to change the message/expiry/download setting, or turn **Sharing enabled** off to kill every link at once. Deleting the file removes the stored copy too.
+7. Internal users also find files shared with them under **File Sharing → Shared With Me** — opening one still goes through the email-code check.
 
 ---
 

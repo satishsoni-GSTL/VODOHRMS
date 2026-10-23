@@ -63,6 +63,7 @@ class AdminPanelProvider extends PanelProvider
                 'Exit Management',
                 'Organization',
                 'Policies',
+                'File Sharing',
                 'Notifications',
                 'Roles & Permissions',
             ])
