@@ -415,11 +415,57 @@ class PayrollCalculationService
         return $this->calculateForEmployee($run, $employee);
     }
 
+    /** One-time earnings HR can add to selected employees from the payroll run. */
+    public const ONE_TIME_EARNING_TYPES = [
+        PayrollInput::TYPE_BONUS,
+        PayrollInput::TYPE_INCENTIVE,
+        PayrollInput::TYPE_ADDITIONAL_EARNING,
+    ];
+
+    /**
+     * Add a one-time bonus / incentive to the selected employees for this run's month only,
+     * then recalculate just those employees. Later months are not affected.
+     *
+     * @param  iterable<Employee>  $employees
+     */
+    public function addOneTimeEarning(PayrollRun $run, iterable $employees, string $type, float $amount, string $reason, User $by): int
+    {
+        $this->assertEditable($run);
+
+        if (! in_array($type, self::ONE_TIME_EARNING_TYPES, true) || $amount <= 0) {
+            throw ValidationException::withMessages(['amount' => 'Choose a bonus/incentive type and an amount greater than zero.']);
+        }
+
+        $waived = $this->deductionExceptions->waivedKeySet($run);
+        $count = 0;
+
+        DB::transaction(function () use ($run, $employees, $type, $amount, $reason, $by, $waived, &$count) {
+            foreach ($employees as $employee) {
+                $input = PayrollInput::create([
+                    'employee_id' => $employee->id,
+                    'payroll_month' => $run->payroll_month,
+                    'type' => $type,
+                    'amount' => round($amount, 2),
+                    'reason' => $reason,
+                    'created_by' => $by->id,
+                    'approved_by' => $by->id,
+                ]);
+
+                $this->auditLog->log('add_'.$type, $input, [], ['amount' => $input->amount, 'payroll_month' => $run->payroll_month], reason: $reason, module: 'payroll');
+
+                $this->calculateForEmployee($run, $employee, $waived);
+                $count++;
+            }
+        });
+
+        return $count;
+    }
+
     private function assertEditable(PayrollRun $run): void
     {
         if (! $run->isEditable()) {
             throw ValidationException::withMessages([
-                'status' => 'This payroll run is finalized/locked. Reopen it before changing LOP.',
+                'status' => 'This payroll run is finalized/locked. Reopen it before making changes.',
             ]);
         }
     }

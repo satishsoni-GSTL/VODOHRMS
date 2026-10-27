@@ -4,6 +4,7 @@ namespace App\Filament\Resources\PayrollRunResource\Pages;
 
 use App\Filament\Pages\PrePayrollDeductionReview;
 use App\Filament\Resources\PayrollRunResource;
+use App\Models\PayrollInput;
 use App\Models\PayrollRun;
 use App\Models\PayrollRunEmployee;
 use App\Models\PayrollRunLopWaiver;
@@ -11,7 +12,9 @@ use App\Services\PayrollCalculationService;
 use App\Services\PayslipService;
 use App\Services\PrePayrollDeductionService;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
@@ -20,6 +23,7 @@ use Filament\Tables;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\ValidationException;
 
 class ManagePayrollRun extends ViewRecord implements HasTable
@@ -47,6 +51,11 @@ class ManagePayrollRun extends ViewRecord implements HasTable
                     ->label('LOP Amount')
                     ->money('INR')
                     ->color(fn ($state) => $state > 0 ? 'danger' : 'gray'),
+                Tables\Columns\TextColumn::make('one_time_earnings')
+                    ->label('Bonus / Incentive')
+                    ->money('INR')
+                    ->getStateUsing(fn (PayrollRunEmployee $record) => $this->oneTimeEarningsFor($record))
+                    ->color(fn ($state) => $state > 0 ? 'success' : 'gray'),
                 Tables\Columns\TextColumn::make('gross_earnings')->money('INR'),
                 Tables\Columns\TextColumn::make('total_deductions')->money('INR'),
                 Tables\Columns\TextColumn::make('net_pay')->money('INR')->weight('bold'),
@@ -70,6 +79,14 @@ class ManagePayrollRun extends ViewRecord implements HasTable
                         app(PayrollCalculationService::class)->calculateForEmployee($this->record, $record->employee);
                         Notification::make()->title('Employee recalculated')->success()->send();
                     }),
+                Tables\Actions\Action::make('addBonus')
+                    ->label('Add Bonus / Incentive')
+                    ->icon('heroicon-o-gift')
+                    ->color('success')
+                    ->visible(fn () => $this->record->isEditable() && auth()->user()->can('payroll.process'))
+                    ->modalDescription(fn (PayrollRunEmployee $record) => "One-time amount for {$record->employee?->full_name} in {$this->record->payroll_month} only. It is not added to the salary structure.")
+                    ->form($this->oneTimeEarningForm())
+                    ->action(fn (PayrollRunEmployee $record, array $data) => $this->addOneTimeEarning([$record->employee], $data)),
                 Tables\Actions\Action::make('waiveLop')
                     ->label('Waive LOP')
                     ->icon('heroicon-o-hand-raised')
@@ -112,7 +129,20 @@ class ManagePayrollRun extends ViewRecord implements HasTable
                     ->url(fn (PayrollRunEmployee $record) => route('payslips.download', $record->payslip))
                     ->openUrlInNewTab(),
             ])
-            ->bulkActions([]);
+            ->bulkActions([
+                Tables\Actions\BulkAction::make('addBonusToSelected')
+                    ->label('Add Bonus / Incentive')
+                    ->icon('heroicon-o-gift')
+                    ->color('success')
+                    ->visible(fn () => $this->record->isEditable() && auth()->user()->can('payroll.process'))
+                    ->modalDescription(fn () => "Each selected employee gets this one-time amount in {$this->record->payroll_month} only. It is not added to the salary structure.")
+                    ->form($this->oneTimeEarningForm())
+                    ->deselectRecordsAfterCompletion()
+                    ->action(fn (Collection $records, array $data) => $this->addOneTimeEarning(
+                        $records->load('employee')->pluck('employee')->filter(),
+                        $data,
+                    )),
+            ]);
     }
 
     protected function getHeaderActions(): array
@@ -198,6 +228,47 @@ class ManagePayrollRun extends ViewRecord implements HasTable
         $this->lopWaivers ??= $this->record->lopWaivers()->get()->keyBy('employee_id');
 
         return $this->lopWaivers->get($record->employee_id);
+    }
+
+    /** @var \Illuminate\Support\Collection<int, float>|null keyed by employee_id */
+    private ?\Illuminate\Support\Collection $oneTimeEarnings = null;
+
+    private function oneTimeEarningsFor(PayrollRunEmployee $record): float
+    {
+        $this->oneTimeEarnings ??= PayrollInput::query()
+            ->where('payroll_month', $this->record->payroll_month)
+            ->whereIn('type', PayrollCalculationService::ONE_TIME_EARNING_TYPES)
+            ->whereIn('employee_id', $this->record->employees()->select('employee_id'))
+            ->groupBy('employee_id')
+            ->selectRaw('employee_id, SUM(amount) as total')
+            ->pluck('total', 'employee_id');
+
+        return (float) $this->oneTimeEarnings->get($record->employee_id, 0);
+    }
+
+    private function oneTimeEarningForm(): array
+    {
+        return [
+            Select::make('type')
+                ->options(collect(PayrollCalculationService::ONE_TIME_EARNING_TYPES)->mapWithKeys(fn ($t) => [$t => PayrollInput::TYPES[$t]]))
+                ->default(PayrollInput::TYPE_BONUS)
+                ->required(),
+            TextInput::make('amount')->numeric()->minValue(0.01)->required()->prefix('₹'),
+            Textarea::make('reason')->required()->label('Reason (e.g. Diwali bonus, sales target incentive)'),
+        ];
+    }
+
+    private function addOneTimeEarning(iterable $employees, array $data): void
+    {
+        try {
+            $count = app(PayrollCalculationService::class)->addOneTimeEarning(
+                $this->record, $employees, $data['type'], (float) $data['amount'], $data['reason'], auth()->user(),
+            );
+            $this->oneTimeEarnings = null;
+            Notification::make()->title(PayrollInput::TYPES[$data['type']]." added for {$count} employee(s) and recalculated")->success()->send();
+        } catch (ValidationException $e) {
+            Notification::make()->title(collect($e->errors())->flatten()->first())->danger()->send();
+        }
     }
 
     private function runAction(\Closure $callback): void
