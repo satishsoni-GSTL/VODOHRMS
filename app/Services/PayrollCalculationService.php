@@ -130,11 +130,12 @@ class PayrollCalculationService
         if ($structure) {
             $structureLines = $structure->lines()->with('component')->get();
 
-            // Basic actually earned this month (after LOP) — the wage base for
-            // percentage-of-Basic components such as PF.
+            // Basic for the employment window this month — the wage base for
+            // percentage-of-Basic components such as PF. LOP / present days do not
+            // reduce it, so PF stays the same regardless of attendance.
             $basicLine = $structureLines->first(fn ($l) => strtoupper($l->component?->code ?? '') === 'BASIC');
             $earnedBasic = $basicLine
-                ? ($basicLine->component->is_prorated ? round((float) $basicLine->monthly_amount * $prorationFactor, 2) : (float) $basicLine->monthly_amount)
+                ? ($basicLine->component->is_prorated ? round((float) $basicLine->monthly_amount * $earningProrationFactor, 2) : (float) $basicLine->monthly_amount)
                 : null;
 
             foreach ($structureLines as $line) {
@@ -153,7 +154,9 @@ class PayrollCalculationService
                     // max ₹3,000), so a rate/cap change applies to the next payroll.
                     $amount = $component->amountFromBasic($earnedBasic);
                 } else {
-                    $factor = $component->type === SalaryComponent::TYPE_EARNING ? $earningProrationFactor : $prorationFactor;
+                    // PF (fixed-amount) is likewise unaffected by LOP / present days.
+                    $isPf = str_starts_with(strtoupper($component->code ?? ''), 'PF');
+                    $factor = $component->type === SalaryComponent::TYPE_EARNING || $isPf ? $earningProrationFactor : $prorationFactor;
                     $amount = $component->is_prorated
                         ? round((float) $line->monthly_amount * $factor, 2)
                         : (float) $line->monthly_amount;
