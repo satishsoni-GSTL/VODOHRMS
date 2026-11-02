@@ -339,11 +339,19 @@ class PayrollCalculationService
             }
         }
 
+        // Before the joining date the employee isn't employed yet: those days (weekly offs
+        // and holidays included) are unpaid, not LOP.
+        $joinedOn = $employee->date_of_joining ? Carbon::parse($employee->date_of_joining)->startOfDay() : null;
+
         $paidDays = 0.0;
         $lopDays = 0.0;
 
         foreach (CarbonPeriod::create($monthStart, $monthEnd) as $date) {
             $dateString = $date->toDateString();
+
+            if ($joinedOn && $date->lt($joinedOn)) {
+                continue;
+            }
 
             if ($paidThrough && $date->gt($paidThrough)) {
                 continue;
