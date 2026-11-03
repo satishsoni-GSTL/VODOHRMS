@@ -41,8 +41,8 @@ class WorkFromHomeRequestResource extends Resource
                     ->disabled(fn () => ! auth()->user()->can('attendance.manage'))
                     ->dehydrated(),
                 Forms\Components\DatePicker::make('from_date')->required()->live()
-                    ->minDate(now()->addDay()->startOfDay())
-                    ->helperText('Apply at least 1 day in advance.'),
+                    ->minDate(now()->startOfDay())
+                    ->helperText('You can apply for today or a future date.'),
                 Forms\Components\DatePicker::make('to_date')->required()
                     ->afterOrEqual('from_date'),
                 Forms\Components\Textarea::make('reason')->required()->columnSpanFull(),

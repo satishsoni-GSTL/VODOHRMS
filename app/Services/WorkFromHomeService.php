@@ -24,11 +24,10 @@ class WorkFromHomeService
             throw ValidationException::withMessages(['to_date' => 'To date cannot be before the from date.']);
         }
 
-        // WFH is pre-approved: it must be applied at least one day before the WFH date so the
-        // approver can act before the day starts. Missed/back-dated WFH goes through
-        // attendance regularization instead.
-        if ($fromDate->copy()->startOfDay()->lessThan(Carbon::tomorrow())) {
-            throw ValidationException::withMessages(['from_date' => 'Work From Home must be applied at least 1 day in advance.']);
+        // WFH can be applied up to and including the WFH date itself. Missed/back-dated WFH goes
+        // through attendance regularization instead.
+        if ($fromDate->copy()->startOfDay()->lessThan(Carbon::today())) {
+            throw ValidationException::withMessages(['from_date' => 'Work From Home cannot be applied for past dates. Use attendance regularization instead.']);
         }
 
         if ($this->workingDaysBetween($employee, $fromDate, $toDate) === []) {

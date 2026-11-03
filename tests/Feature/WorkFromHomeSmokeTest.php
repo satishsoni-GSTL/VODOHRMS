@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Resources\WorkFromHomeRequestResource\Pages\CreateWorkFromHomeRequest;
 use App\Models\Attendance;
 use App\Models\Company;
 use App\Models\Employee;
@@ -16,6 +17,7 @@ use Database\Seeders\Phase2Seeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class WorkFromHomeSmokeTest extends TestCase
@@ -77,7 +79,7 @@ class WorkFromHomeSmokeTest extends TestCase
     public function test_wfh_request_approved_by_manager_marks_working_days_and_skips_weekly_off(): void
     {
         // Pin "today" (2024-01-04) one day before the requested range so the working-day
-        // math is deterministic and the request is made in advance, as WFH requires.
+        // math is deterministic.
         Carbon::setTestNow(Carbon::parse('2024-01-04'));
 
         $manager = $this->makeUser('WMGR001', 'Manager');
@@ -111,7 +113,7 @@ class WorkFromHomeSmokeTest extends TestCase
 
     public function test_self_clock_in_and_out_computes_hours_and_late_mark_without_losing_wfh_status(): void
     {
-        // Applied and approved the day before (WFH must be applied 1 day in advance).
+        // Applied and approved the day before.
         Carbon::setTestNow(Carbon::parse('2023-12-31 17:00:00'));
 
         $manager = $this->makeUser('WMGR002', 'Manager');
@@ -154,19 +156,63 @@ class WorkFromHomeSmokeTest extends TestCase
         app(WorkFromHomeService::class)->clockIn($employee->employee);
     }
 
-    public function test_a_same_day_wfh_request_is_rejected(): void
+    public function test_a_same_day_wfh_request_can_be_approved_and_punched(): void
     {
-        Carbon::setTestNow(Carbon::parse('2024-01-15 08:00:00'));
+        Carbon::setTestNow(Carbon::parse('2024-01-15 11:00:00')); // Monday, the day already under way
 
-        $employee = $this->makeUser('WEMP004', 'Employee');
+        $manager = $this->makeUser('WMGR004', 'Manager');
+        $employee = $this->makeUser('WEMP004', 'Employee', $manager->employee_id);
 
-        $this->expectException(ValidationException::class);
-        app(WorkFromHomeService::class)->request(
+        // Already punched at the office before applying: that punch must survive approval.
+        Attendance::create([
+            'employee_id' => $employee->employee_id,
+            'attendance_date' => '2024-01-15',
+            'status' => Attendance::STATUS_PRESENT,
+            'first_in' => '09:40:00',
+        ]);
+
+        $request = app(WorkFromHomeService::class)->request(
             $employee->employee,
             Carbon::parse('2024-01-15'),
             Carbon::parse('2024-01-15'),
             'Today',
         );
+
+        $this->assertEquals(WorkFromHomeRequest::STATUS_PENDING, $request->status);
+
+        app(ApprovalWorkflowService::class)->act($request->approvalInstance, $manager, 'approve');
+
+        $attendance = Attendance::where('employee_id', $employee->employee_id)->where('attendance_date', '2024-01-15')->first();
+        $this->assertEquals(Attendance::STATUS_WFH, $attendance->status);
+        $this->assertStringStartsWith('09:40', $attendance->first_in);
+
+        Carbon::setTestNow(Carbon::parse('2024-01-15 18:30:00'));
+        app(WorkFromHomeService::class)->clockOut($employee->employee);
+
+        $attendance->refresh();
+        $this->assertEquals(Attendance::STATUS_WFH, $attendance->status);
+        $this->assertStringStartsWith('18:30', $attendance->last_out);
+    }
+
+    public function test_the_web_form_accepts_today_but_not_a_past_date(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2024-01-15 11:00:00')); // Monday
+
+        $manager = $this->makeUser('WMGR007', 'Manager');
+        $employee = $this->makeUser('WEMP007', 'Employee', $manager->employee_id);
+        $this->actingAs($employee);
+
+        Livewire::test(CreateWorkFromHomeRequest::class)
+            ->fillForm(['from_date' => '2024-01-12', 'to_date' => '2024-01-12', 'reason' => 'Last Friday'])
+            ->call('create')
+            ->assertHasFormErrors(['from_date']);
+
+        Livewire::test(CreateWorkFromHomeRequest::class)
+            ->fillForm(['from_date' => '2024-01-15', 'to_date' => '2024-01-15', 'reason' => 'Today'])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame('2024-01-15', WorkFromHomeRequest::sole()->from_date->toDateString());
     }
 
     public function test_a_back_dated_wfh_request_is_rejected(): void
