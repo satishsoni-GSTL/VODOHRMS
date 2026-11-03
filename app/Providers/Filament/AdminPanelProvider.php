@@ -36,8 +36,10 @@ class AdminPanelProvider extends PanelProvider
             ->passwordReset(ForgotPassword::class, ResetPasswordWithOtp::class)
             ->profile(ChangePassword::class)
             ->brandName('GlobalSpace HRMS')
-            ->brandLogo(asset('images/globalspace-logo.png'))
-            ->brandLogoHeight('2.25rem')
+            // The original PNG has a white tagline, so it only reads on dark surfaces.
+            ->brandLogo(asset('images/globalspace-logo-light.png'))
+            ->darkModeBrandLogo(asset('images/globalspace-logo.png'))
+            ->brandLogoHeight('2.75rem')
             ->favicon(asset('images/globalspace-favicon.png'))
             ->colors(fn (): array => DiwaliTheme::isActive()
                 ? [
@@ -49,6 +51,12 @@ class AdminPanelProvider extends PanelProvider
                     'primary' => Color::hex('#0F7A78'),
                     'warning' => Color::hex('#F5A623'),
                 ])
+            ->renderHook(PanelsRenderHook::GLOBAL_SEARCH_AFTER, fn (): string => view('filament.partials.sister-company-logo')->render())
+            ->renderHook(
+                PanelsRenderHook::SIMPLE_PAGE_START,
+                fn (): string => view('filament.partials.login-logos')->render(),
+                scopes: Login::class,
+            )
             ->renderHook(PanelsRenderHook::HEAD_END, fn (): string => DiwaliTheme::render('head'))
             ->renderHook(
                 PanelsRenderHook::BODY_START,

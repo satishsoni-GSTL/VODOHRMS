@@ -9,21 +9,23 @@
                 <stop offset=".55" stop-color="#FF9F1C" />
                 <stop offset="1" stop-color="#E8430E" />
             </linearGradient>
+            <symbol id="dw-rangoli-art" viewBox="-200 -200 400 400">
+                @foreach (range(0, 15) as $i)
+                    <path transform="rotate({{ $i * 22.5 }})" d="M0-190C22-160 22-130 0-104-22-130-22-160 0-190Z" fill="{{ $i % 2 ? '#FF9F1C' : '#E8246F' }}" />
+                    <circle transform="rotate({{ $i * 22.5 + 11.25 }})" cy="-168" r="6" fill="#FFD166" />
+                @endforeach
+                <circle r="102" fill="none" stroke="#FFD166" stroke-width="3" stroke-dasharray="3 9" stroke-linecap="round" />
+                @foreach (range(0, 11) as $i)
+                    <path transform="rotate({{ $i * 30 }})" d="M0-96C20-70 20-48 0-28-20-48-20-70 0-96Z" fill="{{ $i % 2 ? '#2EC4B6' : '#FFD166' }}" />
+                @endforeach
+                <circle r="24" fill="#E8246F" />
+                <circle r="12" fill="#FFD166" />
+            </symbol>
         </defs>
     </svg>
 
-    <svg class="dw-rangoli" viewBox="-200 -200 400 400">
-        @foreach (range(0, 15) as $i)
-            <path transform="rotate({{ $i * 22.5 }})" d="M0-190C22-160 22-130 0-104-22-130-22-160 0-190Z" fill="{{ $i % 2 ? '#FF9F1C' : '#E8246F' }}" />
-            <circle transform="rotate({{ $i * 22.5 + 11.25 }})" cy="-168" r="6" fill="#FFD166" />
-        @endforeach
-        <circle r="102" fill="none" stroke="#FFD166" stroke-width="3" stroke-dasharray="3 9" stroke-linecap="round" />
-        @foreach (range(0, 11) as $i)
-            <path transform="rotate({{ $i * 30 }})" d="M0-96C20-70 20-48 0-28-20-48-20-70 0-96Z" fill="{{ $i % 2 ? '#2EC4B6' : '#FFD166' }}" />
-        @endforeach
-        <circle r="24" fill="#E8246F" />
-        <circle r="12" fill="#FFD166" />
-    </svg>
+    <svg class="dw-rangoli dw-rangoli-left"><use href="#dw-rangoli-art" /></svg>
+    <svg class="dw-rangoli dw-rangoli-right"><use href="#dw-rangoli-art" /></svg>
 
     @foreach ([[6, 0, 22, 1], [17, -9, 16, .75], [29, -4, 19, .9], [71, -13, 15, .7], [83, -6, 24, 1], [93, -17, 17, .8]] as [$left, $delay, $duration, $scale])
         <svg class="dw-lantern" viewBox="0 0 60 84" style="--left: {{ $left }}%; --delay: {{ $delay }}s; --duration: {{ $duration }}s; --scale: {{ $scale }}">

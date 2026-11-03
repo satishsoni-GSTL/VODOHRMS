@@ -15,7 +15,7 @@
     --dw-rani: #b0125b;
     --dw-saffron: #d9480f;
     --dw-gold: #ffc857;
-    --dw-cream: #fffaf0;
+    --dw-surface: #ffffff;
     --dw-devanagari: 'Tiro Devanagari Hindi', 'Nirmala UI', 'Noto Serif Devanagari', 'Mangal', serif;
 }
 
@@ -56,13 +56,21 @@
 
 .dw-rangoli {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    width: min(135vh, 150vw);
-    height: min(135vh, 150vw);
-    margin: calc(min(135vh, 150vw) / -2) 0 0 calc(min(135vh, 150vw) / -2);
-    opacity: 0.2;
-    animation: dw-spin 120s linear infinite;
+    width: 58vh;
+    height: 58vh;
+    opacity: 0.32;
+    animation: dw-spin 90s linear infinite;
+}
+
+.dw-rangoli-left {
+    bottom: 6vh;
+    left: -14vh;
+}
+
+.dw-rangoli-right {
+    top: 10vh;
+    right: -14vh;
+    animation-direction: reverse;
 }
 
 .dw-lantern {
@@ -115,7 +123,7 @@
     border: 2px solid transparent;
     border-radius: 20px;
     background:
-        linear-gradient(var(--dw-cream), var(--dw-cream)) padding-box,
+        linear-gradient(var(--dw-surface), var(--dw-surface)) padding-box,
         conic-gradient(from var(--dw-angle), var(--dw-gold), var(--dw-rani), var(--dw-saffron), var(--dw-gold)) border-box;
     box-shadow:
         0 0 50px rgba(255, 170, 60, 0.35),
@@ -129,14 +137,6 @@
     background:
         linear-gradient(#1f0d22, #1f0d22) padding-box,
         conic-gradient(from var(--dw-angle), var(--dw-gold), var(--dw-rani), var(--dw-saffron), var(--dw-gold)) border-box;
-}
-
-/* The logo's teal wordmark needs a light plate on dark surfaces. */
-.dark .fi-logo {
-    box-sizing: content-box;
-    padding: 0.3rem 0.6rem;
-    border-radius: 0.5rem;
-    background: var(--dw-cream);
 }
 
 .dw-greeting {
@@ -295,7 +295,7 @@
 /* Topbar: warm surface, hanging marigold garland */
 
 .fi-body .fi-topbar > nav {
-    background: var(--dw-cream);
+    background: var(--dw-surface);
     box-shadow: 0 1px 0 rgba(120, 53, 15, 0.12);
 }
 
@@ -321,7 +321,7 @@
 }
 
 .fi-body .fi-sidebar-header {
-    background: var(--dw-cream);
+    background: var(--dw-surface);
 }
 
 .dark .fi-body .fi-sidebar-header {
@@ -399,6 +399,7 @@
     justify-content: space-between;
     gap: 1.5rem;
     overflow: hidden;
+    margin-top: 2rem;
     padding: 1.25rem 1.5rem;
     border-radius: 1rem;
     background: linear-gradient(100deg, #2a0b2e 0%, #6d0f43 55%, #b4380f 100%);

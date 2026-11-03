@@ -96,7 +96,7 @@ class Employee extends Model
         'dob', 'gender', 'marital_status', 'blood_group',
         'personal_mobile', 'alternate_mobile', 'personal_email', 'official_email', 'profile_photo_path',
         'current_address', 'permanent_address', 'city', 'state', 'country', 'pincode',
-        'company_id', 'branch_id', 'location_id', 'department_id', 'sub_department_id',
+        'company_id', 'document_logo', 'branch_id', 'location_id', 'department_id', 'sub_department_id',
         'designation_id', 'grade_id', 'cost_center_id', 'employee_type_id', 'employment_type_id',
         'reporting_manager_id', 'hr_manager_id',
         'date_of_joining', 'confirmation_date', 'last_working_date', 'probation_period_days', 'notice_period_days',

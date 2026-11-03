@@ -21,6 +21,9 @@
 </head>
 <body>
     <div class="header">
+        @if ($logo)
+            <img src="{{ $logo }}" alt="" style="height: 38px; margin-bottom: 6px;">
+        @endif
         <h1>{{ $company->name ?? 'VODOHRMS' }}</h1>
         <p>{{ $company->address ?? '' }}</p>
         <p>PAN: {{ $company->pan ?? '—' }} &nbsp;|&nbsp; TAN: {{ $company->tan ?? '—' }}</p>

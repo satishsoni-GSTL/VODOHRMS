@@ -9,7 +9,7 @@
         </p>
         <p class="dw-banner-text">
             May this festival of lights bring you and your family joy, good health and prosperity.
-            With warm wishes from Team GlobalSpace.
+            With warm wishes from {{ auth()->user()->employee?->company?->name ?? 'Team GlobalSpace' }}.
         </p>
 
         @include('filament.festive.diwali.days')

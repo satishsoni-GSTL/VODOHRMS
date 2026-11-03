@@ -22,6 +22,12 @@ class Login extends BaseLogin
      */
     private const MAX_ATTEMPTS = 5;
 
+    /** The login-logos partial shows the brand logo beside the sister company's. */
+    public function hasLogo(): bool
+    {
+        return false;
+    }
+
     protected function getEmailFormComponent(): Component
     {
         return TextInput::make('login')

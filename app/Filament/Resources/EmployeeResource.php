@@ -5,12 +5,14 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\EmployeeResource\Pages;
 use App\Models\Employee;
 use App\Rules\NotCircularReportingManager;
+use App\Support\DocumentLogo;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class EmployeeResource extends Resource
@@ -110,6 +112,11 @@ class EmployeeResource extends Resource
                         ->schema([
                             Forms\Components\Select::make('company_id')
                                 ->relationship('company', 'name')->searchable()->preload()->live(),
+                            Forms\Components\Select::make('document_logo')
+                                ->label('Logo on Documents')
+                                ->options(DocumentLogo::OPTIONS)
+                                ->placeholder('Company default')
+                                ->helperText('Printed on this employee\'s payslips, expense statements and Form 16. Documents already generated keep their old logo until regenerated.'),
                             Forms\Components\Select::make('branch_id')
                                 ->relationship('branch', 'name', fn (Builder $query, Forms\Get $get) => $get('company_id') ? $query->where('company_id', $get('company_id')) : $query)
                                 ->searchable()->preload(),
@@ -206,6 +213,11 @@ class EmployeeResource extends Resource
                 Tables\Columns\TextColumn::make('department.name')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('designation.name')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('reportingManager.full_name')->label('Reporting Manager')->toggleable(),
+                Tables\Columns\TextColumn::make('document_logo')
+                    ->label('Document Logo')
+                    ->formatStateUsing(fn (string $state) => DocumentLogo::OPTIONS[$state] ?? $state)
+                    ->placeholder('Company default')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('date_of_joining')->date()->sortable()->toggleable(),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
@@ -222,6 +234,7 @@ class EmployeeResource extends Resource
                 Tables\Filters\SelectFilter::make('status')->options(Employee::STATUSES),
                 Tables\Filters\SelectFilter::make('company_id')->relationship('company', 'name')->label('Company'),
                 Tables\Filters\SelectFilter::make('department_id')->relationship('department', 'name')->label('Department'),
+                Tables\Filters\SelectFilter::make('document_logo')->options(DocumentLogo::OPTIONS)->label('Document Logo'),
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
@@ -234,6 +247,19 @@ class EmployeeResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
                 ])->visible(fn () => auth()->user()?->can('employee.delete') ?? false),
+                Tables\Actions\BulkAction::make('setDocumentLogo')
+                    ->label('Set Document Logo')
+                    ->icon('heroicon-o-photo')
+                    ->visible(fn () => auth()->user()?->can('employee.edit') ?? false)
+                    ->form([
+                        Forms\Components\Select::make('document_logo')
+                            ->label('Logo on Documents')
+                            ->options(DocumentLogo::OPTIONS)
+                            ->placeholder('Company default'),
+                    ])
+                    ->action(fn (Collection $records, array $data) => $records->each->update(['document_logo' => $data['document_logo'] ?? null]))
+                    ->deselectRecordsAfterCompletion()
+                    ->successNotificationTitle('Document logo updated'),
             ])
             ->defaultSort('employee_code');
     }
