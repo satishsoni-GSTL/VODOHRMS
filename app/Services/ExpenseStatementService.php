@@ -6,6 +6,7 @@ use App\Models\Employee;
 use App\Models\ExpenseClaim;
 use App\Models\ExpenseClaimLine;
 use App\Models\User;
+use App\Support\DocumentLogo;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -89,7 +90,7 @@ class ExpenseStatementService
             'employee' => $employee->loadMissing(['company', 'department', 'designation', 'reportingManager']),
             'monthLabel' => $start->format('F Y'),
             'generatedAt' => now()->format('d M Y, h:i A'),
-            'logo' => $this->logoDataUri(),
+            'logo' => DocumentLogo::dataUri($employee),
             'lines' => $rows,
             'attachmentCount' => $n,
             'byCategory' => $counting->groupBy('category')->map(fn (Collection $g) => $g->sum('requested_amount'))->sortKeys()->all(),
@@ -314,12 +315,5 @@ class ExpenseStatementService
     private function latin1(string $text): string
     {
         return (string) @iconv('UTF-8', 'windows-1252//TRANSLIT', $text);
-    }
-
-    private function logoDataUri(): ?string
-    {
-        $path = public_path('images/globalspace-logo.png');
-
-        return is_readable($path) ? 'data:image/png;base64,'.base64_encode((string) file_get_contents($path)) : null;
     }
 }

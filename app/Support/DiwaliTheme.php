@@ -8,12 +8,11 @@ class DiwaliTheme
 {
     public static function isActive(): bool
     {
-        $config = config('festive.diwali');
-
-        return $config['enabled']
+        // Defaults to off so a stale config cache on deploy can't break the portal.
+        return config('festive.diwali.enabled', false)
             && now()->between(
-                Carbon::parse($config['from'])->startOfDay(),
-                Carbon::parse($config['until'])->endOfDay(),
+                Carbon::parse(config('festive.diwali.from'))->startOfDay(),
+                Carbon::parse(config('festive.diwali.until'))->endOfDay(),
             );
     }
 

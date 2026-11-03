@@ -31,7 +31,7 @@
 <body>
     <table class="brand">
         <tr>
-            <td>@if ($logo)<img src="{{ $logo }}" alt="GlobalSpace">@endif</td>
+            <td>@if ($logo)<img src="{{ $logo }}" alt="">@endif</td>
             <td>
                 <h1>Monthly Expense Statement</h1>
                 <p>{{ $monthLabel }} · generated {{ $generatedAt }}</p>

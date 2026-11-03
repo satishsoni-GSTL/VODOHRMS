@@ -9,6 +9,7 @@ use App\Models\Form16;
 use App\Models\PayrollRunEmployee;
 use App\Models\TaxRegimeSlab;
 use App\Models\User;
+use App\Support\DocumentLogo;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -50,6 +51,7 @@ class Form16Service
         $pdf = Pdf::loadView('payroll.form16', [
             'employee' => $employee,
             'company' => $employee->company,
+            'logo' => DocumentLogo::dataUri($employee),
             'financialYear' => $financialYear,
             'regime' => $regime,
             'projection' => $projection,
