@@ -6,6 +6,7 @@ use App\Filament\Pages\Auth\ChangePassword;
 use App\Filament\Pages\Auth\ForgotPassword;
 use App\Filament\Pages\Auth\Login;
 use App\Filament\Pages\Auth\ResetPasswordWithOtp;
+use App\Support\DiwaliTheme;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -14,6 +15,7 @@ use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -37,10 +39,28 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogo(asset('images/globalspace-logo.png'))
             ->brandLogoHeight('2.25rem')
             ->favicon(asset('images/globalspace-favicon.png'))
-            ->colors([
-                'primary' => Color::hex('#0F7A78'),
-                'warning' => Color::hex('#F5A623'),
-            ])
+            ->colors(fn (): array => DiwaliTheme::isActive()
+                ? [
+                    'primary' => Color::hex('#B0125B'),
+                    'warning' => Color::hex('#F59E0B'),
+                    'gray' => Color::Stone,
+                ]
+                : [
+                    'primary' => Color::hex('#0F7A78'),
+                    'warning' => Color::hex('#F5A623'),
+                ])
+            ->renderHook(PanelsRenderHook::HEAD_END, fn (): string => DiwaliTheme::render('head'))
+            ->renderHook(
+                PanelsRenderHook::BODY_START,
+                fn (): string => DiwaliTheme::render('stage'),
+                scopes: [Login::class, ForgotPassword::class, ResetPasswordWithOtp::class],
+            )
+            ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_BEFORE, fn (): string => DiwaliTheme::render('greeting'))
+            ->renderHook(
+                PanelsRenderHook::PAGE_START,
+                fn (): string => DiwaliTheme::render('welcome'),
+                scopes: Pages\Dashboard::class,
+            )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
