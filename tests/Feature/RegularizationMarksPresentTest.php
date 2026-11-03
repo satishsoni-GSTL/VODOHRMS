@@ -175,7 +175,7 @@ class RegularizationMarksPresentTest extends TestCase
 
         $request = app(WorkFromHomeService::class)->request(
             $employeeUser->employee,
-            Carbon::now()->next(Carbon::MONDAY), // WFH must be applied at least 1 day in advance
+            Carbon::now()->next(Carbon::MONDAY),
             Carbon::now()->next(Carbon::MONDAY),
             'Plumber visit',
         );

@@ -4,7 +4,7 @@ import '../api/api_client.dart';
 import '../utils/format.dart';
 import '../widgets/common.dart';
 
-/// Request Work From Home (must be at least one day in advance). Pops `true` on success.
+/// Request Work From Home (today or a future date). Pops `true` on success.
 class WfhFormScreen extends StatefulWidget {
   const WfhFormScreen({super.key, this.reapplyFrom});
 
@@ -21,18 +21,18 @@ class _WfhFormScreenState extends State<WfhFormScreen> {
   DateTime? _to;
   bool _busy = false;
 
-  DateTime get _tomorrow {
+  DateTime get _today {
     final now = DateTime.now();
-    return DateTime(now.year, now.month, now.day + 1);
+    return DateTime(now.year, now.month, now.day);
   }
 
   @override
   void initState() {
     super.initState();
-    // Reapplying for past dates isn't allowed, so only keep them if still in the future.
+    // Reapplying for past dates isn't allowed, so only keep them if today or later.
     final from = parseDate(widget.reapplyFrom?['from_date'] as String?);
     final to = parseDate(widget.reapplyFrom?['to_date'] as String?);
-    if (from != null && !from.isBefore(_tomorrow)) {
+    if (from != null && !from.isBefore(_today)) {
       _from = from;
       _to = to;
     }
@@ -64,20 +64,20 @@ class _WfhFormScreenState extends State<WfhFormScreen> {
       body: Form(
         key: _formKey,
         child: ListView(padding: const EdgeInsets.all(16), children: [
-          Text('Work From Home must be requested at least one day in advance. On an approved day you can clock in and out from the Home screen.',
+          Text('You can request Work From Home for today or a future date. On an approved day you can clock in and out from the Home screen.',
               style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 16),
           DateField(
             label: 'From',
             value: _from,
-            first: _tomorrow,
+            first: _today,
             onChanged: (d) => setState(() {
               _from = d;
               if (_to == null || _to!.isBefore(d)) _to = d;
             }),
           ),
           const SizedBox(height: 16),
-          DateField(label: 'To', value: _to, first: _from ?? _tomorrow, onChanged: (d) => setState(() => _to = d)),
+          DateField(label: 'To', value: _to, first: _from ?? _today, onChanged: (d) => setState(() => _to = d)),
           const SizedBox(height: 16),
           TextFormField(
             controller: _reason,
