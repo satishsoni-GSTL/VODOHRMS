@@ -13,6 +13,7 @@ import 'loans_screen.dart';
 import 'payslips_screen.dart';
 import 'policies_screen.dart';
 import 'profile_screen.dart';
+import 'travel_screen.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
@@ -42,6 +43,7 @@ class MoreScreen extends StatelessWidget {
         ),
         const Divider(),
         _item(context, Icons.description_outlined, 'Salary slips', const PayslipsScreen()),
+        _item(context, Icons.flight_takeoff_outlined, 'Travel requests', const TravelScreen()),
         _item(context, Icons.receipt_long_outlined, 'Expense claims', const ExpensesScreen()),
         _item(context, Icons.celebration_outlined, 'Holidays', const HolidaysScreen()),
         _item(context, Icons.account_balance_wallet_outlined, 'Loans & salary advance', const LoansScreen()),

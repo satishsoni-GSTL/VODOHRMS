@@ -10,6 +10,8 @@ use App\Models\ExpenseClaim;
 use App\Models\LeaveApplication;
 use App\Models\Resignation;
 use App\Models\User;
+use App\Models\ProbationReview;
+use App\Models\TravelRequest;
 use App\Models\WorkFromHomeRequest;
 use App\Services\ApprovalWorkflowService;
 use Illuminate\Http\JsonResponse;
@@ -116,6 +118,23 @@ class ApprovalController extends MobileController
                 'Amount' => '₹'.number_format((float) $r->requested_amount, 2),
                 'Requested on' => $r->request_date?->format('d M Y'),
                 'Reason' => $r->reason,
+            ]],
+            $r instanceof TravelRequest => ['travel', "Travel {$r->request_number}", [
+                'Route' => $r->route_label,
+                'Dates' => $r->departure_date?->format('d M Y').' – '.$r->return_date?->format('d M Y'),
+                'Mode' => TravelRequest::MODES[$r->travel_mode] ?? $r->travel_mode,
+                'Estimate' => (float) $r->estimated_cost > 0 ? '₹'.number_format((float) $r->estimated_cost, 2) : null,
+                'Advance' => (float) $r->advance_requested > 0 ? '₹'.number_format((float) $r->advance_requested, 2) : null,
+                'Purpose' => $r->purpose,
+            ]],
+            $r instanceof ProbationReview => ['probation', 'Probation Confirmation', [
+                'Recommendation' => $r->recommendation_label,
+                'Probation ends' => $r->probation_end_date?->format('d M Y'),
+                'Effective' => $r->effective_date?->format('d M Y'),
+                'Rating' => $r->rating ? "{$r->rating}/5" : null,
+                'Performance' => $r->performance_summary,
+                'Improve on' => $r->improvement_areas,
+                'Submitted by' => $r->submitter?->name,
             ]],
             $r instanceof Resignation => ['resignation', 'Resignation', [
                 'Resigned on' => $r->resignation_date?->format('d M Y'),

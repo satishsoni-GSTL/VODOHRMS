@@ -35,6 +35,7 @@ class ApprovalWorkflowService
         WorkflowDefinition::MODULE_LEAVE => 'leave.manage',
         WorkflowDefinition::MODULE_ATTENDANCE_REGULARIZATION => 'attendance.manage',
         WorkflowDefinition::MODULE_WORK_FROM_HOME => 'attendance.manage',
+        WorkflowDefinition::MODULE_PROBATION_CONFIRMATION => 'employee.edit',
     ];
 
     public function __construct(private readonly AuditLogService $auditLog) {}
@@ -312,21 +313,27 @@ class ApprovalWorkflowService
             return;
         }
 
+        // Some requests are raised *about* an employee by someone else (e.g. a manager's
+        // probation review): the outcome goes back to that submitter, not the subject.
+        $outcomeRecipient = method_exists($requestable, 'approvalOutcomeRecipient')
+            ? $requestable->approvalOutcomeRecipient()
+            : $employee;
+
         if ($action === ApprovalAction::ACTION_REJECT) {
-            $this->notifyEmployee($employee, new ApprovalOutcomeNotification($requestable, 'rejected', $remarks));
+            $outcomeRecipient && $this->notifyEmployee($outcomeRecipient, new ApprovalOutcomeNotification($requestable, 'rejected', $remarks));
 
             return;
         }
 
         if ($action === ApprovalAction::ACTION_SEND_BACK) {
-            $this->notifyEmployee($employee, new ApprovalOutcomeNotification($requestable, 'sent_back', $remarks));
+            $outcomeRecipient && $this->notifyEmployee($outcomeRecipient, new ApprovalOutcomeNotification($requestable, 'sent_back', $remarks));
             $this->notifyCurrentLevelApprovers($instance, $employee);
 
             return;
         }
 
         if ($instance->status === ApprovalInstance::STATUS_APPROVED) {
-            $this->notifyEmployee($employee, new ApprovalOutcomeNotification($requestable, 'approved'));
+            $outcomeRecipient && $this->notifyEmployee($outcomeRecipient, new ApprovalOutcomeNotification($requestable, 'approved'));
 
             return;
         }

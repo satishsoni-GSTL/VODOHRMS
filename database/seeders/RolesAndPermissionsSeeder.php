@@ -26,6 +26,7 @@ class RolesAndPermissionsSeeder extends Seeder
         'policy.manage',
         'fileshare.manage',
         'notification.manage', 'notification.view',
+        'fieldforce.view', 'fieldforce.manage',
     ];
 
     private const ROLE_PERMISSIONS = [
@@ -46,9 +47,11 @@ class RolesAndPermissionsSeeder extends Seeder
             'policy.manage',
             'fileshare.manage',
             'notification.manage', 'notification.view',
+            'fieldforce.view', 'fieldforce.manage',
         ],
         'HR Executive' => [
             'organization.view',
+            'fieldforce.view',
             'employee.view', 'employee.add', 'employee.edit', 'employee.import', 'employee.export',
             'attendance.view', 'attendance.manage', 'attendance.import',
             'leave.view', 'expense.view',

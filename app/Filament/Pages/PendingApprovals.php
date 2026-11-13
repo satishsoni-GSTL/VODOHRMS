@@ -124,6 +124,20 @@ class PendingApprovals extends Page implements HasActions, HasForms
                 $r->from_date?->format('d M Y'),
                 $r->to_date?->format('d M Y'),
             ),
+            'TravelRequest' => sprintf(
+                'Travel %s · %s · %s → %s%s',
+                $r->request_number,
+                $r->route_label,
+                $r->departure_date?->format('d M'),
+                $r->return_date?->format('d M Y'),
+                (float) $r->advance_requested > 0 ? ' · advance ₹'.number_format((float) $r->advance_requested, 2) : '',
+            ),
+            'ProbationReview' => sprintf(
+                'Probation · %s · ends %s%s',
+                $r->recommendation_label,
+                $r->probation_end_date?->format('d M Y'),
+                $r->rating ? " · rated {$r->rating}/5" : '',
+            ),
             'ExpenseClaim' => sprintf(
                 'Expense %s · ₹%s · %d item(s)',
                 $r->claim_number,

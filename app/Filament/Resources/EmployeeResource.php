@@ -4,8 +4,10 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\EmployeeResource\Pages;
 use App\Models\Employee;
+use App\Models\Geography;
 use App\Rules\NotCircularReportingManager;
 use App\Support\DocumentLogo;
+use App\Support\FieldForce;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -14,6 +16,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Validation\Rules\Unique;
 
 class EmployeeResource extends Resource
 {
@@ -66,7 +69,7 @@ class EmployeeResource extends Resource
                                 ->maxLength(150)
                                 ->unique(
                                     ignoreRecord: true,
-                                    modifyRuleUsing: fn (\Illuminate\Validation\Rules\Unique $rule) => $rule->withoutTrashed(),
+                                    modifyRuleUsing: fn (Unique $rule) => $rule->withoutTrashed(),
                                 )
                                 ->rule(fn (?Employee $record) => function (string $attribute, $value, \Closure $fail) use ($record) {
                                     $trashed = Employee::onlyTrashed()
@@ -105,6 +108,13 @@ class EmployeeResource extends Resource
                             Forms\Components\TextInput::make('state')->label('Mailing State'),
                             Forms\Components\TextInput::make('country')->default('India'),
                             Forms\Components\TextInput::make('pincode')->label('Mailing PIN Code'),
+                            Forms\Components\Fieldset::make('Emergency Contact')
+                                ->schema([
+                                    Forms\Components\TextInput::make('emergency_contact_name')->label('Name')->maxLength(150),
+                                    Forms\Components\TextInput::make('emergency_contact_relation')->label('Relationship')->maxLength(50),
+                                    Forms\Components\TextInput::make('emergency_contact_phone')->label('Phone')->tel()->maxLength(20),
+                                ])
+                                ->columns(3),
                         ])
                         ->columns(2),
 
@@ -166,6 +176,32 @@ class EmployeeResource extends Resource
                         ])
                         ->columns(2),
 
+                    Forms\Components\Tabs\Tab::make('Field Force')
+                        ->visible(fn () => FieldForce::enabled())
+                        ->schema([
+                            Forms\Components\Select::make('workforce_type')
+                                ->label('Workforce Type')
+                                ->options(FieldForce::WORKFORCE_TYPES)
+                                ->placeholder('Not classified')
+                                ->helperText('Head Office or Field Force (MR / ABM / RBM ...).'),
+                            Forms\Components\Select::make('division_id')
+                                ->label('Division')
+                                ->relationship('division', 'name')
+                                ->searchable()->preload(),
+                            Forms\Components\Select::make('headquarter_id')
+                                ->label('Headquarter / Base Geography')
+                                ->relationship('headquarter', 'name')
+                                ->getOptionLabelFromRecordUsing(fn (Geography $g) => $g->name.($g->code ? " ({$g->code})" : ''))
+                                ->searchable(['name', 'code'])->preload(),
+                            Forms\Components\Placeholder::make('current_positions')
+                                ->label('Current Position')
+                                ->content(fn (?Employee $record) => $record?->positions()->with('hierarchyLevel')->get()
+                                    ->map(fn ($p) => "{$p->code} - {$p->title}".($p->hierarchyLevel ? " ({$p->hierarchyLevel->short_name})" : ''))
+                                    ->implode(', ') ?: 'None - assign from Field Force › Positions & Vacancies.')
+                                ->visibleOn('edit'),
+                        ])
+                        ->columns(2),
+
                     Forms\Components\Tabs\Tab::make('Statutory & Bank')
                         ->visible($canViewSensitive)
                         ->schema([
@@ -213,6 +249,18 @@ class EmployeeResource extends Resource
                 Tables\Columns\TextColumn::make('department.name')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('designation.name')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('reportingManager.full_name')->label('Reporting Manager')->toggleable(),
+                Tables\Columns\TextColumn::make('workforce_type')
+                    ->label('Workforce')
+                    ->formatStateUsing(fn (?string $state) => FieldForce::WORKFORCE_TYPES[$state] ?? $state)
+                    ->badge()
+                    ->visible(fn () => FieldForce::enabled())
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('division.name')->label('Division')
+                    ->visible(fn () => FieldForce::enabled())
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('headquarter.name')->label('HQ')
+                    ->visible(fn () => FieldForce::enabled())
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('document_logo')
                     ->label('Document Logo')
                     ->formatStateUsing(fn (string $state) => DocumentLogo::OPTIONS[$state] ?? $state)
@@ -235,10 +283,19 @@ class EmployeeResource extends Resource
                 Tables\Filters\SelectFilter::make('company_id')->relationship('company', 'name')->label('Company'),
                 Tables\Filters\SelectFilter::make('department_id')->relationship('department', 'name')->label('Department'),
                 Tables\Filters\SelectFilter::make('document_logo')->options(DocumentLogo::OPTIONS)->label('Document Logo'),
+                Tables\Filters\SelectFilter::make('workforce_type')
+                    ->label('Workforce')
+                    ->options(FieldForce::WORKFORCE_TYPES)
+                    ->visible(fn () => FieldForce::enabled()),
+                Tables\Filters\SelectFilter::make('division_id')
+                    ->label('Division')
+                    ->relationship('division', 'name')
+                    ->visible(fn () => FieldForce::enabled()),
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                PrejoiningInviteResource::inviteAction(Tables\Actions\Action::class),
                 Tables\Actions\DeleteAction::make()->visible(fn () => auth()->user()?->can('employee.delete') ?? false),
                 Tables\Actions\RestoreAction::make()->visible(fn () => auth()->user()?->can('employee.delete') ?? false),
             ])
@@ -269,6 +326,13 @@ class EmployeeResource extends Resource
         return parent::getEloquentQuery()
             ->withoutGlobalScopes([SoftDeletingScope::class])
             ->with(['department', 'designation', 'reportingManager']);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            EmployeeResource\RelationManagers\DocumentsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

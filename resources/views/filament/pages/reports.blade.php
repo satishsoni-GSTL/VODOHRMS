@@ -21,6 +21,20 @@
                 @endforeach
             </select>
         </div>
+        @if ($this->cycleOptions() !== [])
+            <div>
+                <label for="report-cycle" class="mb-2 block text-sm font-medium">Appraisal Cycle (applies to performance reports)</label>
+                <select
+                    id="report-cycle"
+                    wire:model.live="cycle"
+                    class="fi-input block w-full max-w-xs rounded-lg border-gray-300 text-sm shadow-sm dark:border-gray-600 dark:bg-gray-800"
+                >
+                    @foreach ($this->cycleOptions() as $value => $label)
+                        <option value="{{ $value }}">{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+        @endif
     </div>
 
     <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -31,7 +45,11 @@
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ $report['description'] }}</p>
                 </div>
                 <a
-                    href="{{ route('reports.download', ($report['needsFinancialYear'] ?? false) ? ['type' => $report['type'], 'financial_year' => $financialYear] : ['type' => $report['type'], 'month' => $month]) }}"
+                    href="{{ route('reports.download', match (true) {
+                        $report['needsCycle'] ?? false => ['type' => $report['type'], 'cycle' => $cycle],
+                        $report['needsFinancialYear'] ?? false => ['type' => $report['type'], 'financial_year' => $financialYear],
+                        default => ['type' => $report['type'], 'month' => $month],
+                    }) }}"
                     target="_blank"
                     class="fi-btn mt-4 inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-500"
                 >

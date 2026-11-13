@@ -49,6 +49,10 @@ class CompanyResource extends Resource
                 Forms\Components\Toggle::make('is_active')
                     ->default(true)
                     ->required(),
+                Forms\Components\Toggle::make('has_field_force')
+                    ->label('Field Force (Pharma) enabled')
+                    ->helperText('Turns on divisions, sales geography, field hierarchy, positions & vacancies and the field organogram. Leave off for corporate companies.')
+                    ->default(false),
             ])
             ->columns(2);
     }

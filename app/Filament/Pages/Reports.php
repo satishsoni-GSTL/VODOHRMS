@@ -17,10 +17,23 @@ class Reports extends Page
 
     public string $financialYear = '';
 
+    public string $cycle = '';
+
     public function mount(): void
     {
         $this->month = now()->format('Y-m');
         $this->financialYear = FinancialYear::where('is_active', true)->value('name') ?? '';
+        $this->cycle = (string) (array_key_first($this->cycleOptions()) ?? '');
+    }
+
+    /** Appraisal cycles this user can export (launched ones only). @return array<int, string> */
+    public function cycleOptions(): array
+    {
+        return \App\Models\AppraisalCycle::query()
+            ->where('status', '!=', \App\Models\AppraisalCycle::STATUS_DRAFT)
+            ->orderByDesc('period_start')
+            ->pluck('name', 'id')
+            ->all();
     }
 
     /**
@@ -41,6 +54,7 @@ class Reports extends Page
             || $user->can('expense.view')
             || $user->can('payroll.view')
             || $user->can('loan.view')
+            || $user->can('employee.edit')
             || ($user->employee?->directReports()->exists() ?? false);
     }
 
@@ -64,6 +78,7 @@ class Reports extends Page
             ['type' => 'expense_monthly_summary', 'label' => 'Monthly Expense Summary (Employee-wise)', 'description' => 'One row per employee, one column per expense head, with per-employee and grand totals for the selected month.', 'needsMonth' => true, 'visible' => $user->can('expense.view') || $isManager],
             ['type' => 'payroll', 'label' => 'Payroll', 'description' => 'Payroll run summary for the selected month.', 'needsMonth' => true, 'visible' => $user->can('payroll.view')],
             ['type' => 'loan', 'label' => 'Loans & Advances', 'description' => 'All loans/advances and their outstanding balances.', 'needsMonth' => false, 'visible' => $user->can('loan.view') || $isManager],
+            ['type' => 'appraisal', 'label' => 'Performance Appraisals', 'description' => 'For the selected appraisal cycle: per-employee stage, self / manager / final rating and band, every goal with ratings and comments, and the rating distribution.', 'needsMonth' => false, 'needsCycle' => true, 'visible' => ($user->can('employee.edit') || $isManager) && $this->cycleOptions() !== []],
             ['type' => 'payroll_expense_fy', 'label' => 'Payroll + Expense (Financial Year)', 'description' => 'Every employee\'s payroll register and expense claims for the selected financial year, in one workbook.', 'needsMonth' => false, 'needsFinancialYear' => true, 'visible' => $user->can('payroll.view')],
         ];
 

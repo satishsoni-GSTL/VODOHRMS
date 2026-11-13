@@ -37,6 +37,18 @@ class LocationResource extends Resource
                 Forms\Components\TextInput::make('country')->default('India')->required(),
                 Forms\Components\TextInput::make('pincode')->maxLength(10),
                 Forms\Components\Toggle::make('is_active')->default(true)->required(),
+                Forms\Components\Section::make('Attendance geofence')
+                    ->description('Office staff at this location can punch attendance from the mobile app only when they are within this radius of the office. Leave the radius empty to disable app punching here (biometric only). Tip: in Google Maps, right-click the office and click the coordinates to copy them.')
+                    ->schema([
+                        Forms\Components\TextInput::make('latitude')->numeric()->minValue(-90)->maxValue(90)
+                            ->requiredWith('geofence_radius_m')->placeholder('19.0760000'),
+                        Forms\Components\TextInput::make('longitude')->numeric()->minValue(-180)->maxValue(180)
+                            ->requiredWith('geofence_radius_m')->placeholder('72.8777000'),
+                        Forms\Components\TextInput::make('geofence_radius_m')->label('Radius (metres)')
+                            ->numeric()->integer()->minValue(20)->maxValue(5000)->placeholder('200'),
+                    ])
+                    ->columns(3)
+                    ->collapsible(),
             ])
             ->columns(2);
     }
@@ -49,6 +61,8 @@ class LocationResource extends Resource
                 Tables\Columns\TextColumn::make('branch.name')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('city')->searchable(),
                 Tables\Columns\TextColumn::make('state')->searchable(),
+                Tables\Columns\TextColumn::make('geofence_radius_m')->label('Geofence')
+                    ->formatStateUsing(fn ($state) => $state ? "{$state} m" : null)->placeholder('—'),
                 Tables\Columns\IconColumn::make('is_active')->boolean(),
             ])
             ->filters([

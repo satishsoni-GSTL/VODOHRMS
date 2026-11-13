@@ -34,6 +34,10 @@ Route::prefix('mobile')->group(function () {
         Route::get('/wfh', [Mobile\WorkFromHomeController::class, 'index']);
         Route::post('/wfh', [Mobile\WorkFromHomeController::class, 'store']);
 
+        Route::get('/travel', [Mobile\TravelController::class, 'index']);
+        Route::post('/travel', [Mobile\TravelController::class, 'store']);
+        Route::post('/travel/{travel}/cancel', [Mobile\TravelController::class, 'cancel']);
+
         Route::get('/expenses', [Mobile\ExpenseController::class, 'index']);
         Route::post('/expenses', [Mobile\ExpenseController::class, 'store']);
         Route::get('/expenses/statement', [Mobile\ExpenseController::class, 'statement']);

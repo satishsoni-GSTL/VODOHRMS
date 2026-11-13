@@ -19,6 +19,10 @@ class WorkflowDefinition extends Model
 
     public const MODULE_WORK_FROM_HOME = 'work_from_home';
 
+    public const MODULE_PROBATION_CONFIRMATION = 'probation_confirmation';
+
+    public const MODULE_TRAVEL = 'travel';
+
     protected $fillable = ['module', 'name', 'is_active'];
 
     protected function casts(): array

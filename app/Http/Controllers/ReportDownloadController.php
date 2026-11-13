@@ -43,6 +43,14 @@ class ReportDownloadController extends Controller
     {
         $user = $request->user();
 
+        if ($type === 'appraisal') {
+            // HR: whole cycle; reviewers / managers: their own line (scoped inside the export).
+            $cycle = \App\Models\AppraisalCycle::findOrFail($request->integer('cycle'));
+            abort_unless(\App\Filament\Resources\AppraisalResource::scoped(\App\Models\Appraisal::query(), $user)->where('appraisal_cycle_id', $cycle->id)->exists(), 403);
+
+            return Excel::download(new \App\Exports\Reports\AppraisalReportExport($cycle, $user), 'appraisals-'.\Illuminate\Support\Str::slug($cycle->name).'.xlsx');
+        }
+
         if ($type === 'my_attendance') {
             // Always the caller's own employee record — not team-scoped, so no
             // attendance.view/manager check, just "do they have an employee record".

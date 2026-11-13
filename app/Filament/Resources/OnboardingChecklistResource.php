@@ -50,10 +50,35 @@ class OnboardingChecklistResource extends Resource
                 Tables\Columns\IconColumn::make('login_done')->boolean()->label('Login'),
                 Tables\Columns\IconColumn::make('asset_allocation_done')->boolean()->label('Assets'),
                 Tables\Columns\TextColumn::make('completion_percent')->suffix('%')->weight('bold'),
+                Tables\Columns\TextColumn::make('tasks')
+                    ->label('Tasks')
+                    ->state(function (OnboardingChecklist $record) {
+                        $tasks = $record->employee?->onboardingTasks;
+
+                        return $tasks && $tasks->isNotEmpty()
+                            ? $tasks->where('status', '!=', \App\Models\OnboardingTask::STATUS_PENDING)->count().' / '.$tasks->count()
+                            : '—';
+                    })
+                    ->url(fn (OnboardingChecklist $record) => OnboardingTaskResource::getUrl('index', ['tableFilters[employee_id][value]' => $record->employee_id])),
             ])
+            ->modifyQueryUsing(fn ($query) => $query->with('employee.onboardingTasks'))
             ->defaultSort('completion_percent')
             ->filters([])
             ->actions([
+                Tables\Actions\Action::make('startTasks')
+                    ->label('Start Tasks')
+                    ->icon('heroicon-o-play')
+                    ->requiresConfirmation()
+                    ->modalDescription('Create this employee\'s onboarding tasks from the task templates and notify each owner.')
+                    ->visible(fn (OnboardingChecklist $record) => $record->employee && $record->employee->onboardingTasks->isEmpty())
+                    ->action(function (OnboardingChecklist $record) {
+                        try {
+                            $tasks = app(OnboardingService::class)->generateTasks($record->employee);
+                            Notification::make()->title("{$tasks->count()} onboarding tasks created")->success()->send();
+                        } catch (\Illuminate\Validation\ValidationException $e) {
+                            Notification::make()->title(collect($e->errors())->flatten()->first())->danger()->send();
+                        }
+                    }),
                 Tables\Actions\Action::make('refresh')
                     ->label('Refresh')
                     ->icon('heroicon-o-arrow-path')

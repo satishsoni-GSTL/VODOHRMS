@@ -12,6 +12,7 @@ use App\Models\CostCenter;
 use App\Models\Department;
 use App\Models\Designation;
 use App\Models\DevicePunchLog;
+use App\Models\Division;
 use App\Models\Employee;
 use App\Models\EmployeeAsset;
 use App\Models\EmployeeLeaveBalance;
@@ -20,7 +21,10 @@ use App\Models\EmployeeType;
 use App\Models\EmploymentType;
 use App\Models\ExpenseCategory;
 use App\Models\FinancialYear;
+use App\Models\Geography;
+use App\Models\GeoLevel;
 use App\Models\Grade;
+use App\Models\HierarchyLevel;
 use App\Models\Holiday;
 use App\Models\LeavePolicy;
 use App\Models\LeaveType;
@@ -31,6 +35,7 @@ use App\Models\OnboardingChecklist;
 use App\Models\PayrollInput;
 use App\Models\PayrollRun;
 use App\Models\PolicyDocument;
+use App\Models\Position;
 use App\Models\SalaryComponent;
 use App\Models\SharedFile;
 use App\Models\Shift;
@@ -42,6 +47,7 @@ use App\Policies\AttendanceMasterPolicy;
 use App\Policies\AuditLogPolicy;
 use App\Policies\EmployeePolicy;
 use App\Policies\ExpenseMasterPolicy;
+use App\Policies\FieldForcePolicy;
 use App\Policies\LeaveMasterPolicy;
 use App\Policies\NotificationLogPolicy;
 use App\Policies\NotificationTemplatePolicy;
@@ -91,6 +97,13 @@ class AppServiceProvider extends ServiceProvider
             Gate::policy($model, OrganizationPolicy::class);
         }
 
+        foreach ([
+            Division::class, GeoLevel::class, Geography::class,
+            HierarchyLevel::class, Position::class,
+        ] as $model) {
+            Gate::policy($model, FieldForcePolicy::class);
+        }
+
         foreach ([Shift::class, Holiday::class, Attendance::class, BiometricDevice::class, DevicePunchLog::class] as $model) {
             Gate::policy($model, AttendanceMasterPolicy::class);
         }
@@ -111,7 +124,7 @@ class AppServiceProvider extends ServiceProvider
             Gate::policy($model, TaxMasterPolicy::class);
         }
 
-        foreach ([OnboardingChecklist::class, EmployeeAsset::class] as $model) {
+        foreach ([OnboardingChecklist::class, EmployeeAsset::class, \App\Models\OnboardingTaskTemplate::class] as $model) {
             Gate::policy($model, OnboardingMasterPolicy::class);
         }
 
@@ -135,6 +148,8 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('fileshare', fn (Request $request) => Limit::perMinute(60)->by($request->ip()));
         RateLimiter::for('fileshare-code', fn (Request $request) => Limit::perMinute(10)->by($request->ip()));
         RateLimiter::for('fileshare-comment', fn (Request $request) => Limit::perMinute(20)->by($request->ip()));
+        RateLimiter::for('prejoining', fn (Request $request) => Limit::perMinute(60)->by($request->ip()));
+        RateLimiter::for('prejoining-code', fn (Request $request) => Limit::perMinute(10)->by($request->ip()));
     }
 
     /**

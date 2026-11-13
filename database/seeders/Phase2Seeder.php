@@ -38,6 +38,25 @@ class Phase2Seeder extends Seeder
             ]
         );
 
+        // Finance signs off only when a travel advance is requested.
+        $this->seedWorkflow(
+            WorkflowDefinition::MODULE_TRAVEL,
+            'Travel Request Approval',
+            [
+                ['approver_type' => WorkflowLevel::APPROVER_REPORTING_MANAGER],
+                ['approver_type' => WorkflowLevel::APPROVER_FINANCE, 'condition_rules' => [['field' => 'advance_requested', 'operator' => '>', 'value' => 0]]],
+            ]
+        );
+
+        // Raised by the reporting manager, so it goes straight to HR.
+        $this->seedWorkflow(
+            WorkflowDefinition::MODULE_PROBATION_CONFIRMATION,
+            'Probation Confirmation Approval',
+            [
+                ['approver_type' => WorkflowLevel::APPROVER_HR],
+            ]
+        );
+
         Shift::firstOrCreate(
             ['name' => 'General Shift'],
             [

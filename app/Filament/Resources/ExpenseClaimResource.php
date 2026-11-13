@@ -7,7 +7,9 @@ use App\Filament\Concerns\ScopesToOwnTeam;
 use App\Filament\Resources\ExpenseClaimResource\Pages;
 use App\Models\ExpenseCategory;
 use App\Models\ExpenseClaim;
+use App\Models\TravelRequest;
 use App\Services\ExpenseClaimService;
+use App\Services\TravelService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -42,9 +44,21 @@ class ExpenseClaimResource extends Resource
                     ->required()
                     ->default(fn () => auth()->user()->employee_id)
                     ->disabled(fn (string $operation) => $operation === 'edit' || ! auth()->user()->can('expense.manage'))
-                    ->dehydrated(),
+                    ->dehydrated()
+                    ->live(),
                 Forms\Components\DatePicker::make('claim_date')->default(now())->required(),
                 Forms\Components\TextInput::make('project_client')->maxLength(150),
+                Forms\Components\Select::make('travel_request_id')
+                    ->label('For trip')
+                    ->helperText('Link the approved trip this claim is for — its travel advance is adjusted when the claim is paid.')
+                    ->options(fn (Forms\Get $get) => TravelRequest::query()
+                        ->where('employee_id', $get('employee_id') ?: auth()->user()->employee_id)
+                        ->where('status', TravelRequest::STATUS_APPROVED)
+                        ->orderByDesc('departure_date')
+                        ->get()
+                        ->mapWithKeys(fn (TravelRequest $t) => [$t->id => "{$t->request_number} · {$t->route_label} · {$t->departure_date->format('d M Y')}"]))
+                    ->visible(fn (string $operation) => $operation === 'create')
+                    ->searchable(),
                 Forms\Components\Repeater::make('lines')
                     ->schema([
                         Forms\Components\Select::make('category_id')
@@ -117,7 +131,14 @@ class ExpenseClaimResource extends Resource
                         && ! $record->payment()->exists())
                     ->form([
                         Forms\Components\TextInput::make('paid_amount')->numeric()->required()
-                            ->default(fn (ExpenseClaim $record) => $record->total_approved_amount),
+                            ->default(fn (ExpenseClaim $record) => round((float) $record->total_approved_amount - app(TravelService::class)->adjustmentFor($record), 2))
+                            ->helperText(function (ExpenseClaim $record) {
+                                $adjust = app(TravelService::class)->adjustmentFor($record);
+
+                                return $adjust > 0
+                                    ? '₹'.number_format($adjust, 2).' travel advance ('.$record->travelRequest->request_number.') is adjusted against this claim.'
+                                    : null;
+                            }),
                         Forms\Components\DatePicker::make('paid_on')->default(now())->required(),
                         Forms\Components\TextInput::make('payment_reference')->label('Reference / UTR'),
                     ])

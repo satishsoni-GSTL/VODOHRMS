@@ -102,17 +102,21 @@ class WorkFromHomeService
      * Self-service clock-in for today, only allowed once the day is marked Work From Home
      * (i.e. a Work From Home request covering today has been approved).
      */
-    public function clockIn(Employee $employee): AttendancePunch
+    /**
+     * @param  array{latitude?: float, longitude?: float, accuracy_m?: float}  $geo  optional
+     *                                                                                   geo-tag from the mobile app
+     */
+    public function clockIn(Employee $employee, array $geo = []): AttendancePunch
     {
-        return $this->punch($employee, 'in');
+        return $this->punch($employee, 'in', $geo);
     }
 
-    public function clockOut(Employee $employee): AttendancePunch
+    public function clockOut(Employee $employee, array $geo = []): AttendancePunch
     {
-        return $this->punch($employee, 'out');
+        return $this->punch($employee, 'out', $geo);
     }
 
-    private function punch(Employee $employee, string $type): AttendancePunch
+    private function punch(Employee $employee, string $type, array $geo = []): AttendancePunch
     {
         $today = Carbon::today();
 
@@ -136,6 +140,9 @@ class WorkFromHomeService
             'punch_time' => $punchTime,
             'punch_type' => $type,
             'source' => 'self',
+            'latitude' => $geo['latitude'] ?? null,
+            'longitude' => $geo['longitude'] ?? null,
+            'accuracy_m' => $geo['accuracy_m'] ?? null,
         ]);
 
         $time = $punchTime->format('H:i:s');

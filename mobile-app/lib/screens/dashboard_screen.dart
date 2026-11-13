@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
 import '../services/auth_service.dart';
+import '../services/location_service.dart';
 import '../theme.dart';
 import '../utils/format.dart';
 import '../widgets/common.dart';
@@ -24,14 +25,32 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   final _key = GlobalKey<AsyncViewState<Map<String, dynamic>>>();
 
-  Future<void> _clock(String type) async {
+  bool _punching = false;
+
+  /// Geo-tagged punch. Location is sent whenever it can be read; when the server says it is
+  /// required (field / geofenced office punch) the punch is not attempted without it.
+  Future<void> _clock(String type, bool requiresLocation) async {
+    if (_punching) return;
+    setState(() => _punching = true);
     try {
-      final res = await ApiClient.instance.post('/attendance/clock', {'type': type});
+      final body = <String, dynamic>{'type': type};
+      try {
+        final pos = await LocationService.current();
+        body.addAll({'latitude': pos.latitude, 'longitude': pos.longitude, 'accuracy': pos.accuracy});
+      } on LocationException catch (e) {
+        if (requiresLocation) {
+          if (mounted) showSnack(context, e.message, error: true);
+          return;
+        }
+      }
+      final res = await ApiClient.instance.post('/attendance/clock', body);
       if (!mounted) return;
       showSnack(context, '${res['message']} ${res['time'] ?? ''}');
       _key.currentState?.reload();
     } catch (e) {
       if (mounted) showSnack(context, errorText(e), error: true);
+    } finally {
+      if (mounted) setState(() => _punching = false);
     }
   }
 
@@ -70,7 +89,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             padding: const EdgeInsets.only(bottom: 24),
             children: [
               for (final wish in myWishes) _WishCard(wish: wish),
-              _TodayCard(today: today, onClock: _clock, onOpen: () => widget.onOpenTab('attendance')),
+              _TodayCard(
+                today: today,
+                busy: _punching,
+                onClock: (type) => _clock(type, today['clock_requires_location'] == true),
+                onOpen: () => widget.onOpenTab('attendance'),
+              ),
               if (approvals > 0)
                 Card(
                   color: theme.colorScheme.tertiaryContainer,
@@ -151,11 +175,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
 }
 
 class _TodayCard extends StatelessWidget {
-  const _TodayCard({required this.today, required this.onClock, required this.onOpen});
+  const _TodayCard({required this.today, required this.onClock, required this.onOpen, this.busy = false});
 
   final Map<String, dynamic> today;
   final void Function(String type) onClock;
   final VoidCallback onOpen;
+  final bool busy;
+
+  String _clockHint() {
+    final fence = today['geofence'] as Map<String, dynamic>?;
+    return switch (today['clock_mode']) {
+      'field' => 'Field day — your location is recorded when you clock in and out.',
+      'office' => 'Clock in within ${fence?['radius_m'] ?? ''} m of ${fence?['location'] ?? 'the office'}. Your location is checked.',
+      _ => 'Approved Work From Home today — clock in and out from the app.',
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -194,7 +228,7 @@ class _TodayCard extends StatelessWidget {
                 Expanded(
                   child: FilledButton.icon(
                     style: FilledButton.styleFrom(backgroundColor: Brand.orange, foregroundColor: Colors.white),
-                    onPressed: () => onClock('in'),
+                    onPressed: busy ? null : () => onClock('in'),
                     icon: const Icon(Icons.login),
                     label: Text(firstIn == null ? 'Clock in' : 'Clock in again'),
                   ),
@@ -203,14 +237,14 @@ class _TodayCard extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white70)),
-                    onPressed: firstIn == null ? null : () => onClock('out'),
+                    onPressed: firstIn == null || busy ? null : () => onClock('out'),
                     icon: const Icon(Icons.logout),
                     label: const Text('Clock out'),
                   ),
                 ),
               ]),
               const SizedBox(height: 4),
-              Text('Approved Work From Home today — clock in and out from the app.', style: theme.textTheme.bodySmall?.copyWith(color: Colors.white70)),
+              Text(busy ? 'Getting your location…' : _clockHint(), style: theme.textTheme.bodySmall?.copyWith(color: Colors.white70)),
             ],
           ]),
         ),

@@ -218,6 +218,87 @@ Employee: **Loans & Advances → New** → chain **Employee → Reporting Manage
 6. **Edit** the file to change the message/expiry/download setting, or turn **Sharing enabled** off to kill every link at once. Deleting the file removes the stored copy too.
 7. Internal users also find files shared with them under **File Sharing → Shared With Me** — opening one still goes through the email-code check.
 
+### 7.11 Organogram (every company)
+**Employees → Organogram** draws the reporting-manager tree as a **top-down chart**. HR (`employee.view`) sees the whole organisation and can filter by company and department; anyone else sees themselves (highlighted, "You") and their own team, plus their reporting line above them.
+- **Cards** show photo or initials, name, designation, code and department; the colour stripe is the department (legend at the top). Notice period = amber outline; vacant seats (Field Positions view) = red.
+- **+N / −** under a card shows or hides that person's team instantly. Small charts (≤ 40 people) open fully; larger ones open two levels — use **Expand all** / **Collapse**. A team whose members have nobody under them is stacked in a column to keep the chart narrow.
+- **Zoom** (−, +, ⤢ fit to screen) at the top-left of the chart; **drag** the background to move around.
+- Hover a card: **◎ Focus** shows only that branch (with a breadcrumb back up to the whole organisation); **↗** opens the employee record (HR).
+- **Search** highlights matching people and keeps the path down to them. **List** switches to the indented list (handy on phones). **Print** prints just the chart.
+
+### 7.12 Pharma / Field Force (HO + field staff in one portal)
+Nothing here appears until a company has **Organization → Companies → Field Force (Pharma) enabled** switched on. Corporate companies are untouched. Needs `fieldforce.view` (HR Executive) or `fieldforce.manage` (HR Admin).
+
+1. **Field Force → Geography Levels → Load standard pharma levels** — adds Zone › Region › Area › Headquarter › Territory and the NSM › ZBM › RBM › ABM › MR ladder (only missing ones; you can rename or add levels afterwards).
+2. **Divisions** — therapy/sales divisions (Cardio, Derma, Gynae…).
+3. **Geography** — build the tree: each node picks its level and its parent one level up. Mark HQs/territories as HQ, Ex-HQ or Outstation for allowance purposes.
+4. **Hierarchy Levels** — rank 1 is most senior; "Covers geography level" says what one person at that rung is responsible for (ABM → Area, MR → HQ).
+5. **Positions & Vacancies** — create one position (seat) per territory/manager: level, division, geography and which position it reports to. Seats exist with or without a person, so vacant territories stay visible (red **VACANT**, with days vacant). Filter *Vacancy → Vacant only* for the vacancy report.
+6. **Assign** a person to a seat (joining, transfer, promotion). If they already hold another seat, that seat becomes vacant — that is a transfer. The employee's division, HQ and workforce type are copied from the seat. With *Update reporting managers* on (default), their reporting manager becomes the holder of the nearest **filled** seat above, so leave/expense/WFH approvals follow the field hierarchy — an MR under a vacant ABM seat reports to the RBM until the ABM seat is filled. **Vacate** re-points the team to the next manager up. Every move is kept in the position's **Assignment History**.
+7. Head-office staff don't need positions: set **Workforce Type = Head Office** on the employee's **Field Force** tab and keep using the normal reporting manager.
+8. **Organogram** gains two more views: **Field Positions** (seat tree with vacancies; a field manager without HR rights sees only their own part) and **Geography** (filled/total seats per node).
+
+### 7.13 Geo-tagged attendance (mobile app punch)
+The app's Clock In / Clock Out records the phone's GPS position on every punch. Who may punch from the app on a given day:
+
+| Who | Rule |
+|---|---|
+| Anyone on an approved **Work From Home** day | Allowed; location recorded if the phone sends it, not checked. |
+| **Field Force** staff (Workforce Type = Field) | Allowed from anywhere; location is **mandatory**. |
+| Office staff whose **Location** has a geofence | Allowed only **inside the radius**; location mandatory. Outside → refused with the distance shown. |
+| Everyone else | Not allowed — use the biometric device. |
+
+Nobody can punch on a day already marked Leave, or on a frozen (payroll-locked) day.
+
+- **Set up a geofence:** **Organization → Locations → Edit → Attendance geofence** — enter the office latitude/longitude (in Google Maps, right-click the office → click the coordinates to copy) and a radius in metres (200 m is a sensible start; GPS indoors can be off by 30–50 m).
+- **See where someone punched:** **Attendance → Attendance** → row action **Punches** — time, source, coordinates (click to open in Google Maps), GPS accuracy, and for office punches the distance from the office.
+
+### 7.14 Probation confirmation
+1. **Employees → Probation Due** lists everyone with status *Probation*, their probation end date (date of joining + probation period; 180 days if none is set) and days left — red when overdue. HR sees everyone; a manager sees their own reporting line. The menu badge counts those ending within 30 days.
+2. Reporting managers and HR are reminded automatically (email + app push) **30, 15, 7 and 0 days** before the end date, then weekly while overdue, until a review is submitted.
+3. **Start review** → recommend **Confirm** (optionally a different effective date) or **Extend probation** by N days, with a rating, a performance summary and (required for an extension) areas for improvement.
+4. The review goes to **HR** for approval through the standard engine (Pending Approvals, web or app). Approve / Reject / Send Back outcomes go to the manager who submitted it — the employee is not told about an unapproved review.
+5. On final approval: **Confirm** sets the employee to *Active* with the confirmation date; **Extend** adds the days to their probation period (they stay on probation and reappear in Probation Due later). A **confirmation / extension letter** PDF (with the company/document logo) is generated, emailed to the employee and downloadable from the review (**Letter**).
+6. Approval levels can be changed like any other workflow (module `probation_confirmation`); the default is a single HR level.
+
+### 7.15 Travel requests and advances
+1. Employee (web: **Expenses → Travel Requests → New**, or the app: **More → Travel requests**): from/to, dates, mode, estimated cost, and an optional **advance**. Trips must be requested before departure; overlapping trips are refused.
+2. Approval: **Reporting Manager**, plus **Finance** only when an advance is requested (a conditional workflow level — module `travel`). Pending or sent-back requests can be cancelled by the employee.
+3. Finance (`expense.process`) records the advance with **Pay Advance** (amount up to the approved advance, date, UTR).
+4. After the trip, the employee files an **Expense Claim** and picks the trip under **For trip**. When Finance records the claim payment, the trip's unadjusted advance is netted off first — the payment form defaults to *approved amount − advance* and says how much advance was adjusted.
+5. **Close Trip** once settled. If part of the advance is still unadjusted (the trip cost less than the advance), a remark on how it was recovered is required.
+
+### 7.16 Onboarding tasks
+1. **Onboarding → Onboarding Task Templates** (`onboarding.manage`) is the list of what has to happen for every joiner: who does it (HR, the reporting manager, the joiner, everyone with a role, or a named person such as your IT/Admin owner) and when (days before/after joining; may be limited to one company). A standard set of 12 is pre-loaded — reassign the IT/Admin ones to the right people.
+2. When an employee is added with a joining date in the last 30 days or in the future, their tasks are created automatically and each owner gets one email/push listing their tasks. For anyone else HR can click **Start Tasks** on the onboarding checklist.
+3. **Onboarding → Onboarding Tasks**: owners see only their tasks (menu badge = due within 3 days) and click **Mark Done**; HR sees all, can add one-off tasks, **Skip** (with a reason) or **Reopen**. The joiner's own tasks show up once they log in.
+4. Owners are reminded the day after a task goes overdue, and every Monday about everything still overdue. The checklist shows *done / total* tasks per joiner.
+
+### 7.17 Performance management (PMS)
+1. HR (`employee.edit`): **Performance → Appraisal Cycles → New** — name, review period, optional company, due dates, minimum goals. **Launch** creates an appraisal for every active/probation/notice-period employee (reviewer = their reporting manager; HR can **Change Reviewer**) and asks them to set goals.
+2. Employee: **Performance → Appraisals → Open** — add goals (KRAs) with a target and weightage; weightages must total **100%**. **Submit Goals**.
+3. Manager: can adjust, then **Approve Goals** or **Return Goals** with remarks.
+4. HR: **Start Review** on the cycle. Employees rate themselves 1–5 on each approved goal with comments → **Submit Self Review**. Managers then rate each goal → **Submit Review**. The weighted score (Σ rating × weight) becomes the final rating; the employee sees the manager's ratings only after submission.
+5. HR may **Calibrate Rating** (with a reason) before **Close Cycle**, which finalises every reviewed appraisal.
+6. The menu badge counts appraisals waiting on you (your goals / self review, or your team's approvals / reviews). The cycle list shows progress (goals approved, reviewed).
+7. **Exports (Excel):** **Export** on a cycle row, **Export to Excel** on the Appraisals list, or **Reports → Performance Appraisals** (pick the cycle). Three sheets: **Summary** (one row per employee — reviewer, stage, goals, self / manager / final rating, band, HR calibration note, stage dates), **Goals** (every goal with weight, ratings and comments) and **Distribution** (employees per rating band by department, with averages). HR gets everyone; a manager gets their reporting line. PMS is web-only (not in the mobile app).
+
+### 7.18 Pre-joining portal (new hires, before day one)
+1. Add the new hire under **Employees → New** with their joining date (status *Probation*).
+2. Send the link: **Onboarding → Pre-joining → Invite New Hire**, or **Send Pre-joining Link** on the employee's row. It goes to their personal email, is valid 21 days, and any older link for that person stops working. (Not offered for anyone who joined more than 30 days ago — they use My Profile.)
+3. The new hire opens the link, asks for a **6-digit code** emailed to the same address (valid 10 minutes, 5 wrong tries, 3 codes per 10 minutes), and fills in: personal details, contact, current & permanent address, emergency contact, PAN / Aadhaar / UAN, salary bank account, and uploads documents (PAN card, Aadhaar card, address proof, highest education certificate, cancelled cheque — plus optional relieving letter, payslips, passport). **Save & finish later** keeps a draft; **Submit to HR** needs every required detail (missing documents are allowed but stay flagged).
+4. HR is notified. **Onboarding → Pre-joining** shows each hire's % complete and status (menu badge = submissions to review). **Details** opens the employee record — check the data and, on the **Documents** tab, open and **Verify** each document. Then **Mark Reviewed**, or **Send Back** with what to correct (the hire is emailed and the same link works again). **Resend Link** / **Revoke** as needed.
+5. Everything the hire enters is written straight onto their employee record, so nothing has to be re-typed on day one.
+
+### 7.19 My Profile and profile completion (every employee)
+- The **Dashboard** shows a **profile completion** card for every employee: overall %, each section (Personal, Contact, Address, Emergency contact, Statutory IDs, Bank account, Documents) and exactly what is missing, with **Fill missing details**.
+- **Employees → My Profile** (menu badge shows the % while incomplete): fill in missing details and **Upload document**. Rules:
+  - Contact, address, marital status, blood group and emergency contact can always be updated.
+  - Name, date of birth, gender, PAN, Aadhaar, UAN and the salary bank account can be **filled in when empty** but not changed once on file — HR changes them (on the employee record). Saved Aadhaar / account numbers are shown masked.
+  - Formats are checked (PAN ABCDE1234F, 12-digit Aadhaar / UAN, IFSC, 10-digit mobile, 6-digit PIN).
+  - An employee can remove their own document until HR verifies it.
+- HR sees and manages every employee's documents on the employee record's **Documents** tab (needs `employee.view-sensitive` / `onboarding.manage` to see, `employee.edit-sensitive` / `onboarding.manage` to upload, verify or delete). The onboarding checklist's *Docs* tick follows these uploads.
+
 ---
 
 ## 8. Quick answers to "where do I go to…"
@@ -234,6 +315,20 @@ Employee: **Loans & Advances → New** → chain **Employee → Reporting Manage
 | Check onboarding progress for a new hire | **Onboarding → Onboarding Checklists** |
 | Run this month's payroll | **Payroll → Payroll Runs → New** |
 | See who reports to me | Dashboard **My Team Overview** widget, or any scoped list (Leave/Attendance/Expense/Loans) |
+| See the org chart | **Employees → Organogram** |
+| Find vacant territories | **Field Force → Positions & Vacancies** → filter Vacancy: Vacant only |
+| Transfer / promote a field employee | **Field Force → Positions & Vacancies** → Assign on the new seat |
+| Request a trip / travel advance | **Expenses → Travel Requests** (or the app: More → Travel requests) |
+| See onboarding work assigned to me | **Onboarding → Onboarding Tasks** |
+| Run an appraisal cycle | **Performance → Appraisal Cycles** |
+| Export appraisal results | **Reports → Performance Appraisals**, or **Export** on the cycle |
+| Get a new hire to fill in their details before joining | **Onboarding → Pre-joining → Invite New Hire** |
+| Fill in my missing details / upload my documents | **Employees → My Profile** (or the Dashboard card) |
+| See / verify an employee's documents | **Employees → (employee) → Documents** tab |
+| Set my goals / do my self review | **Performance → Appraisals** |
+| Confirm or extend someone's probation | **Employees → Probation Due** → Start review |
+| Let office staff punch from the app | **Organization → Locations** → set the geofence |
+| See where a punch was made | **Attendance → Attendance** → Punches |
 | Export a report | **Reports** |
 | See who changed what and when | **Roles & Permissions → Audit Logs** (Super Admin only) |
 | Change a role's permissions | Not in-app yet — edit `database/seeders/RolesAndPermissionsSeeder.php` and re-run it |

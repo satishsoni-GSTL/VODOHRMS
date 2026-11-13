@@ -55,6 +55,8 @@
 		<string>Used to photograph expense receipts and documents you attach to requests.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>Used to attach receipts and documents to your requests.</string>
+		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>Your location is recorded when you clock in or out, to verify where attendance was marked.</string>
 		<key>UIStatusBarHidden</key>
 		<false/>
 	</dict>

@@ -103,6 +103,10 @@ class ExpenseClaimService
         }
 
         return DB::transaction(function () use ($claim, $amount, $paidOn, $reference, $paidByUserId) {
+            // A claim for a trip absorbs the trip's unadjusted travel advance first; only the
+            // remainder is paid out (the payment form defaults to that net figure).
+            $claim->update(['advance_adjusted' => app(TravelService::class)->adjustmentFor($claim)]);
+
             $payment = ExpensePayment::create([
                 'expense_claim_id' => $claim->id,
                 'paid_amount' => $amount,

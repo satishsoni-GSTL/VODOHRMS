@@ -25,6 +25,16 @@ class Employee extends Model
         // The linked login's `email` is only seeded once, when the login is created. Keep it
         // following the employee's official/personal email so notifications (which route via
         // $user->email) don't keep going to a stale address after a domain change.
+        // A recent / upcoming joiner gets their onboarding tasks as soon as they are added.
+        // Never let a task problem block saving the employee.
+        static::created(function (Employee $employee): void {
+            try {
+                app(\App\Services\OnboardingService::class)->startForNewJoiner($employee);
+            } catch (\Throwable $e) {
+                Log::warning('Could not generate onboarding tasks', ['employee_id' => $employee->id, 'error' => $e->getMessage()]);
+            }
+        });
+
         static::updated(function (Employee $employee): void {
             if ($employee->wasChanged(['official_email', 'personal_email'])) {
                 $employee->syncLoginEmail();
@@ -95,9 +105,10 @@ class Employee extends Model
         'employee_code', 'biometric_enroll_id', 'first_name', 'middle_name', 'last_name', 'display_name',
         'dob', 'gender', 'marital_status', 'blood_group',
         'personal_mobile', 'alternate_mobile', 'personal_email', 'official_email', 'profile_photo_path',
-        'current_address', 'permanent_address', 'city', 'state', 'country', 'pincode',
+        'current_address', 'permanent_address', 'emergency_contact_name', 'emergency_contact_relation', 'emergency_contact_phone', 'city', 'state', 'country', 'pincode',
         'company_id', 'document_logo', 'branch_id', 'location_id', 'department_id', 'sub_department_id',
         'designation_id', 'grade_id', 'cost_center_id', 'employee_type_id', 'employment_type_id',
+        'workforce_type', 'division_id', 'headquarter_id',
         'reporting_manager_id', 'hr_manager_id',
         'date_of_joining', 'confirmation_date', 'last_working_date', 'probation_period_days', 'notice_period_days',
         'weekly_off', 'status', 'created_by', 'updated_by',
@@ -171,6 +182,28 @@ class Employee extends Model
         return $this->belongsTo(EmploymentType::class);
     }
 
+    public function division(): BelongsTo
+    {
+        return $this->belongsTo(Division::class);
+    }
+
+    /** Field-force base geography (HQ) - drives HQ / Ex-HQ / Outstation classification. */
+    public function headquarter(): BelongsTo
+    {
+        return $this->belongsTo(Geography::class, 'headquarter_id');
+    }
+
+    /** Positions this employee currently holds (normally one). */
+    public function positions(): HasMany
+    {
+        return $this->hasMany(Position::class);
+    }
+
+    public function positionAssignments(): HasMany
+    {
+        return $this->hasMany(PositionAssignment::class);
+    }
+
     public function reportingManager(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'reporting_manager_id');
@@ -184,6 +217,30 @@ class Employee extends Model
     public function directReports(): HasMany
     {
         return $this->hasMany(Employee::class, 'reporting_manager_id');
+    }
+
+    public function prejoiningInvites(): HasMany
+    {
+        return $this->hasMany(PrejoiningInvite::class);
+    }
+
+    public function onboardingTasks(): HasMany
+    {
+        return $this->hasMany(OnboardingTask::class);
+    }
+
+    public function probationReviews(): HasMany
+    {
+        return $this->hasMany(ProbationReview::class);
+    }
+
+    /** Probation length used when an employee has no probation period recorded. */
+    public const DEFAULT_PROBATION_DAYS = 180;
+
+    /** Date of joining + probation period (default 180 days); null without a joining date. */
+    public function probationEndDate(): ?\Carbon\Carbon
+    {
+        return $this->date_of_joining?->copy()->addDays($this->probation_period_days ?? self::DEFAULT_PROBATION_DAYS);
     }
 
     public function user(): HasOne

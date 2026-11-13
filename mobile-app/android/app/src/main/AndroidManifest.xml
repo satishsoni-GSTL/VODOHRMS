@@ -2,6 +2,10 @@
     xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Geo-tagged attendance: the position is read once, in the foreground, when the
+         employee taps Clock in / Clock out. No background location. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 
     <!-- Google Play photo & video permissions policy: the app never needs broad media/storage
          access. Photos come from the system photo picker (image_picker), PDFs from the system

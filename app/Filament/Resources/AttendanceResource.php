@@ -37,7 +37,7 @@ class AttendanceResource extends Resource
                     ->options(Attendance::STATUSES)
                     ->required(),
                 Forms\Components\Select::make('source')
-                    ->options(['manual' => 'Manual', 'biometric' => 'Biometric', 'import' => 'Import', 'self' => 'Self'])
+                    ->options(['manual' => 'Manual', 'biometric' => 'Biometric', 'import' => 'Import', 'self' => 'Self', 'mobile' => 'Mobile App', 'wfh' => 'Work From Home'])
                     ->default('manual')
                     ->required(),
                 Forms\Components\Textarea::make('remarks')->columnSpanFull(),
@@ -86,6 +86,16 @@ class AttendanceResource extends Resource
                     }),
             ])
             ->actions([
+                Tables\Actions\Action::make('punches')
+                    ->label('Punches')
+                    ->icon('heroicon-o-map-pin')
+                    ->color('gray')
+                    ->modalHeading(fn (Attendance $record) => "Punches · {$record->employee?->full_name} · {$record->attendance_date?->format('d M Y')}")
+                    ->modalContent(fn (Attendance $record) => view('filament.resources.attendance-resource.punches', [
+                        'punches' => $record->punches()->with('location')->orderBy('punch_time')->get(),
+                    ]))
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Close'),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])

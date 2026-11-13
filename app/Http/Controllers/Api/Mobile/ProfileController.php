@@ -65,8 +65,12 @@ class ProfileController extends MobileController
                 'first_in' => $attendance?->first_in,
                 'last_out' => $attendance?->hasDistinctPunches() ? $attendance->last_out : null,
                 'hours' => $attendance?->effective_hours !== null ? (float) $attendance->effective_hours : null,
-                // Self clock-in/out is only for an approved Work From Home day.
-                'can_clock' => $attendance?->status === Attendance::STATUS_WFH && ! $attendance->is_frozen,
+                // Self clock-in/out: approved WFH day, field-force staff, or office staff whose
+                // location has a geofence (see MobilePunchService).
+                'can_clock' => ($clockMode = app(\App\Services\MobilePunchService::class)->modeFor($employee)) !== null,
+                'clock_mode' => $clockMode['mode'] ?? null,
+                'clock_requires_location' => $clockMode['requires_location'] ?? false,
+                'geofence' => $clockMode['geofence'] ?? null,
             ],
             'leave_balances' => $balances,
             'my_pending' => $pending,

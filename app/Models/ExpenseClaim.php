@@ -60,7 +60,13 @@ class ExpenseClaim extends Model implements Approvable
     protected $fillable = [
         'claim_number', 'employee_id', 'claim_date', 'project_client', 'status',
         'approval_instance_id', 'total_requested_amount', 'total_approved_amount',
+        'travel_request_id', 'advance_adjusted',
     ];
+
+    public function travelRequest(): BelongsTo
+    {
+        return $this->belongsTo(TravelRequest::class);
+    }
 
     protected function casts(): array
     {

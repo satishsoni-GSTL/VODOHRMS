@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\Mobile;
 use App\Models\AttendanceRegularization;
 use App\Services\AttendanceMonthlySummaryService;
 use App\Services\AttendanceRegularizationService;
-use App\Services\WorkFromHomeService;
+use App\Services\MobilePunchService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -64,18 +64,30 @@ class AttendanceController extends MobileController
         ]);
     }
 
-    /** Self punch — only on an approved Work From Home day (enforced by the service). */
-    public function clock(Request $request, WorkFromHomeService $wfh): JsonResponse
+    /**
+     * Geo-tagged self punch: on an approved Work From Home day, for field-force staff, or for
+     * office staff inside their location's geofence (rules live in MobilePunchService).
+     */
+    public function clock(Request $request, MobilePunchService $punches): JsonResponse
     {
-        $data = $request->validate(['type' => ['required', Rule::in(['in', 'out'])]]);
-        $employee = $this->employee($request);
+        $data = $request->validate([
+            'type' => ['required', Rule::in(['in', 'out'])],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90', 'required_with:longitude'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180', 'required_with:latitude'],
+            'accuracy' => ['nullable', 'numeric', 'min:0', 'max:100000'],
+        ]);
 
-        $punch = $data['type'] === 'in' ? $wfh->clockIn($employee) : $wfh->clockOut($employee);
+        $punch = $punches->punch($this->employee($request), $data['type'], [
+            'latitude' => isset($data['latitude']) ? (float) $data['latitude'] : null,
+            'longitude' => isset($data['longitude']) ? (float) $data['longitude'] : null,
+            'accuracy_m' => isset($data['accuracy']) ? (float) $data['accuracy'] : null,
+        ]);
 
         return response()->json([
             'ok' => true,
             'message' => $data['type'] === 'in' ? 'Clocked in.' : 'Clocked out.',
             'time' => $punch->punch_time?->format('H:i'),
+            'distance_m' => $punch->distance_m,
         ]);
     }
 
