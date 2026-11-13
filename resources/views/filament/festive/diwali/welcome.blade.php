@@ -1,15 +1,27 @@
 @php
     $firstName = \Illuminate\Support\Str::of(filament()->getUserName(auth()->user()))->trim()->before(' ');
+    $current = \App\Support\FestiveThemes::current();
+    // HR can override the wording from Organization → Celebration Themes.
+    $custom = $current ? \App\Support\FestiveThemes::viewData($current) : null;
+    $row = $current['row'] ?? null;
 @endphp
 
 <div class="dw-banner" data-dw-welcome>
     <div class="dw-banner-copy">
         <p class="dw-banner-title">
-            <span lang="hi">शुभ दीपावली</span>, {{ $firstName }}
+            @if (filled($row?->title))
+                {{ $custom['title'] }}
+            @else
+                <span lang="hi">शुभ दीपावली</span>, {{ $firstName }}
+            @endif
         </p>
         <p class="dw-banner-text">
-            May this festival of lights bring you and your family joy, good health and prosperity.
-            With warm wishes from {{ auth()->user()->employee?->company?->name ?? 'Team GlobalSpace' }}.
+            @if (filled($row?->message))
+                {{ $custom['message'] }}
+            @else
+                May this festival of lights bring you and your family joy, good health and prosperity.
+                With warm wishes from {{ auth()->user()->employee?->company?->name ?? 'Team GlobalSpace' }}.
+            @endif
         </p>
 
         @include('filament.festive.diwali.days')

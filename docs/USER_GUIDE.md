@@ -299,6 +299,27 @@ Nobody can punch on a day already marked Leave, or on a frozen (payroll-locked) 
   - An employee can remove their own document until HR verifies it.
 - HR sees and manages every employee's documents on the employee record's **Documents** tab (needs `employee.view-sensitive` / `onboarding.manage` to see, `employee.edit-sensitive` / `onboarding.manage` to upload, verify or delete). The onboarding checklist's *Docs* tick follows these uploads.
 
+### 7.20 Celebration themes (Diwali, New Year, Annual Day, Birthday…)
+**Organization → Celebration Themes** (`organization.manage`) dresses up the login page and dashboard for an occasion: themed colours across the portal, an animated backdrop behind the sign-in card with a greeting and countdown, a banner on the dashboard, and a short animation the first time someone opens the dashboard after signing in.
+
+| Theme | Look | Default dates |
+|---|---|---|
+| Diwali | Diyas, rangoli, lanterns, fireworks | 1–12 Nov 2026 |
+| New Year | Midnight blue & gold, fireworks, the new year in gold | 29 Dec – 2 Jan |
+| Christmas | Red & green, falling snow, tree | 20–26 Dec |
+| Annual Day | Purple & gold, confetti, trophy, event date & venue | none — set them |
+| Birthday | Pink, balloons & confetti, cake | personal (see below) |
+| Holi | Colour-powder bursts | 19–23 Mar 2027 |
+| Independence Day | Tricolour confetti, national flag | 13–16 Aug 2027 |
+| Republic Day | Tricolour confetti, national flag | 24–27 Jan 2027 |
+
+1. Flip **On** in the list (or **Edit** to set dates). A theme shows only while it is on **and** today is between *Show from* and *Show until*; with no dates it stays on until you switch it off. Only Diwali is on initially — every other theme starts off.
+2. **Edit** also lets you change the greeting title and message (placeholders `{name}`, `{company}`, `{year}`, `{venue}`; empty = the theme's default wording), the **countdown days** ("5 days to Annual Day"), and for Annual Day the **venue**.
+3. Only one company-wide theme shows at a time. If two overlap, the one whose dates started most recently wins (a dated theme beats one with no dates); the list shows *Live now* / *Overlaps* / *Scheduled* / *Ended*.
+4. **Birthday is personal:** while it's on, each employee gets the birthday look and "Happy Birthday, {name}!" on their own birthday (from the date of birth on their profile), over any other theme. It never appears on the login page.
+5. **Preview** shows a theme on your own dashboard only (it says *Preview — only you can see this*; *End preview* on the banner or at the top of the list). **Login page** opens the sign-in page with the theme.
+6. Emergency off switch for every theme without a deploy: set `FESTIVE_THEMES=false` in `.env`.
+
 ---
 
 ## 8. Quick answers to "where do I go to…"
@@ -324,6 +345,7 @@ Nobody can punch on a day already marked Leave, or on a frozen (payroll-locked) 
 | Export appraisal results | **Reports → Performance Appraisals**, or **Export** on the cycle |
 | Get a new hire to fill in their details before joining | **Onboarding → Pre-joining → Invite New Hire** |
 | Fill in my missing details / upload my documents | **Employees → My Profile** (or the Dashboard card) |
+| Switch on a festival / Annual Day / birthday theme | **Organization → Celebration Themes** |
 | See / verify an employee's documents | **Employees → (employee) → Documents** tab |
 | Set my goals / do my self review | **Performance → Appraisals** |
 | Confirm or extend someone's probation | **Employees → Probation Due** → Start review |

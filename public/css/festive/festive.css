@@ -1,0 +1,407 @@
+/*
+ * Shared celebration theme (New Year, Christmas, Annual Day, Birthday, Holi, Independence /
+ * Republic Day). Only linked while a theme is active; per-theme colours arrive as CSS
+ * variables from resources/views/filament/festive/generic/head.blade.php.
+ * Diwali keeps its own stylesheet (diwali.css).
+ */
+
+:root {
+    --fx-devanagari: 'Tiro Devanagari Hindi', 'Nirmala UI', 'Noto Serif Devanagari', 'Mangal', serif;
+}
+
+/* ---------- Sign-in pages ---------- */
+
+.fx-stage {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+    background:
+        radial-gradient(70% 45% at 50% 110%, color-mix(in srgb, var(--fx-accent) 35%, transparent), transparent 70%),
+        radial-gradient(55% 50% at 88% 8%, color-mix(in srgb, var(--fx-accent-2) 22%, transparent), transparent 70%),
+        linear-gradient(180deg, var(--fx-stage-1) 0%, var(--fx-stage-2) 60%, var(--fx-stage-3) 100%);
+}
+
+.fx-stage ~ .fi-simple-layout {
+    position: relative;
+    z-index: 1;
+}
+
+.fx-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.fx-stage-art {
+    position: absolute;
+    width: min(34vh, 260px);
+    opacity: 0.22;
+    filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.15));
+}
+
+.fx-stage-art-left {
+    bottom: 5vh;
+    left: 4vw;
+    transform: rotate(-8deg);
+}
+
+.fx-stage-art-right {
+    top: 8vh;
+    right: 4vw;
+    transform: rotate(8deg);
+}
+
+.fx-tricolour-band {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 10px;
+    background: linear-gradient(90deg, #ff9933 0 33.3%, #ffffff 33.3% 66.6%, #138808 66.6% 100%);
+}
+
+.fx-stage ~ .fi-simple-layout .fi-simple-main {
+    width: calc(100% - 24px);
+    border: 2px solid transparent;
+    border-radius: 20px;
+    background:
+        linear-gradient(#fff, #fff) padding-box,
+        linear-gradient(135deg, var(--fx-accent), var(--fx-primary), var(--fx-accent-2)) border-box;
+    box-shadow: 0 0 46px color-mix(in srgb, var(--fx-accent) 35%, transparent), 0 24px 60px rgba(0, 0, 0, 0.45);
+    animation: fx-card-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.dark .fx-stage ~ .fi-simple-layout .fi-simple-main {
+    background:
+        linear-gradient(#111827, #111827) padding-box,
+        linear-gradient(135deg, var(--fx-accent), var(--fx-primary), var(--fx-accent-2)) border-box;
+}
+
+.fx-stage ~ .fi-simple-layout .fi-btn-color-primary {
+    background-image: linear-gradient(100deg, var(--fx-primary), color-mix(in srgb, var(--fx-primary) 60%, var(--fx-accent)));
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--fx-primary) 35%, transparent);
+}
+
+.fx-greeting {
+    margin-bottom: 1.4rem;
+    text-align: center;
+}
+
+.fx-local {
+    font-family: var(--fx-devanagari);
+    font-size: 1.5rem;
+    line-height: 1.4;
+    color: var(--fx-primary);
+}
+
+.fx-greeting-title {
+    background: linear-gradient(100deg, var(--fx-primary), color-mix(in srgb, var(--fx-primary) 45%, #b45309), var(--fx-primary)) 0 0 / 220% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    font-size: 1.6rem;
+    font-weight: 800;
+    line-height: 1.25;
+    animation: fx-shimmer 5s linear infinite;
+}
+
+.dark .fx-greeting-title {
+    background-image: linear-gradient(100deg, #fff, var(--fx-accent), #fff);
+}
+
+.fx-greeting-text {
+    margin-top: 0.3rem;
+    color: #4b5563;
+    font-size: 0.875rem;
+}
+
+.dark .fx-greeting-text {
+    color: #d1d5db;
+}
+
+/* ---------- Countdown / days ---------- */
+
+.fx-days-block {
+    --fx-day-text: #1f2937;
+    --fx-day-muted: #6b7280;
+    --fx-day-bg: color-mix(in srgb, var(--fx-primary) 8%, transparent);
+    --fx-day-line: color-mix(in srgb, var(--fx-primary) 28%, transparent);
+    margin-top: 0.85rem;
+}
+
+.dark .fx-days-block,
+.fx-banner .fx-days-block {
+    --fx-day-text: #fff;
+    --fx-day-muted: rgba(255, 255, 255, 0.75);
+    --fx-day-bg: rgba(255, 255, 255, 0.1);
+    --fx-day-line: rgba(255, 255, 255, 0.28);
+}
+
+.fx-countdown {
+    margin-bottom: 0.45rem;
+    color: var(--fx-day-text);
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.fx-day-single {
+    color: var(--fx-day-muted);
+    font-size: 0.85rem;
+}
+
+.fx-days {
+    display: grid;
+    grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr));
+    gap: 0.3rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.fx-day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.35rem 0.15rem;
+    border: 1px solid var(--fx-day-line);
+    border-radius: 0.6rem;
+    background: var(--fx-day-bg);
+    text-align: center;
+}
+
+.fx-day-date {
+    color: var(--fx-day-text);
+    font-size: 0.8125rem;
+    font-weight: 700;
+}
+
+.fx-day-name {
+    color: var(--fx-day-muted);
+    font-size: 0.6875rem;
+    line-height: 1.2;
+}
+
+.fx-day.is-past {
+    opacity: 0.55;
+}
+
+.fx-day.is-today {
+    border-color: transparent;
+    background: linear-gradient(120deg, var(--fx-primary), var(--fx-accent));
+}
+
+.fx-day.is-today .fx-day-date,
+.fx-day.is-today .fx-day-name {
+    color: #fff;
+}
+
+/* ---------- Portal ---------- */
+
+.fi-body:not(:has(> .fx-stage)) {
+    background:
+        radial-gradient(50rem 30rem at 100% 0, color-mix(in srgb, var(--fx-accent) 10%, transparent), transparent 70%),
+        radial-gradient(50rem 30rem at 0 100%, color-mix(in srgb, var(--fx-primary) 7%, transparent), transparent 70%),
+        #fbfaf8;
+    background-attachment: fixed;
+}
+
+.dark .fi-body:not(:has(> .fx-stage)) {
+    background:
+        radial-gradient(50rem 30rem at 100% 0, color-mix(in srgb, var(--fx-accent) 8%, transparent), transparent 70%),
+        radial-gradient(50rem 30rem at 0 100%, color-mix(in srgb, var(--fx-primary) 14%, transparent), transparent 70%),
+        #0b0d12;
+    background-attachment: fixed;
+}
+
+/* A thin festive ribbon under the top bar. */
+.fi-body .fi-topbar {
+    position: relative;
+}
+
+.fi-body .fi-topbar::after {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -3px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--fx-banner-1), var(--fx-banner-2), var(--fx-banner-3), var(--fx-banner-2), var(--fx-banner-1)) 0 0 / 200% 100%;
+    content: '';
+    animation: fx-shimmer 8s linear infinite;
+}
+
+/* ---------- Dashboard banner ---------- */
+
+.fx-banner {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    overflow: hidden;
+    margin-top: 2rem;
+    padding: 1.25rem 1.5rem;
+    border-radius: 1rem;
+    background: linear-gradient(100deg, var(--fx-banner-1) 0%, var(--fx-banner-2) 55%, var(--fx-banner-3) 100%);
+    box-shadow: 0 12px 28px color-mix(in srgb, var(--fx-banner-2) 35%, transparent);
+    color: #fff;
+}
+
+.fx-banner::before {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(30rem 12rem at 85% 50%, rgba(255, 255, 255, 0.14), transparent 70%);
+    content: '';
+    pointer-events: none;
+}
+
+.fx-banner-copy {
+    position: relative;
+    min-width: 0;
+}
+
+.fx-banner .fx-local {
+    color: var(--fx-accent);
+    font-size: 1.25rem;
+}
+
+.fx-banner-title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    line-height: 1.25;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+
+.fx-banner-text {
+    max-width: 44rem;
+    margin-top: 0.25rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.9rem;
+}
+
+.fx-banner .fx-days-block {
+    max-width: 30rem;
+}
+
+.fx-banner-art {
+    position: relative;
+    flex-shrink: 0;
+    width: 8.5rem;
+}
+
+.fx-preview-tag {
+    display: inline-block;
+    margin-bottom: 0.4rem;
+    padding: 0.1rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.3);
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.fx-preview-tag a {
+    color: #fff;
+    text-decoration: underline;
+}
+
+.fx-motif {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/* Independence / Republic Day banner: tricolour edge. */
+.fx-theme-independence_day.fx-banner,
+.fx-theme-republic_day.fx-banner {
+    border-top: 6px solid #ff9933;
+    border-bottom: 6px solid #138808;
+}
+
+/* The post-login burst over the dashboard (doesn't block clicks). */
+.fx-burst {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    transition: opacity 1s ease;
+}
+
+@media (max-width: 640px) {
+    .fx-banner-art,
+    .fx-stage-art-right {
+        display: none;
+    }
+
+    .fx-banner-title {
+        font-size: 1.3rem;
+    }
+}
+
+/* ---------- Motion ---------- */
+
+.fx-twinkle {
+    animation: fx-twinkle 1.8s ease-in-out infinite alternate;
+    animation-delay: var(--d, 0s);
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+.fx-flame {
+    animation: fx-flicker 0.9s ease-in-out infinite alternate;
+    animation-delay: var(--d, 0s);
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+}
+
+.fx-pulse {
+    animation: fx-pulse 2.6s ease-in-out infinite alternate;
+    animation-delay: var(--d, 0s);
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+.fx-wave {
+    animation: fx-wave 2.4s ease-in-out infinite alternate;
+    transform-box: fill-box;
+    transform-origin: left center;
+}
+
+@keyframes fx-card-in {
+    from { opacity: 0; transform: translateY(18px) scale(0.98); }
+    to { opacity: 1; transform: none; }
+}
+
+@keyframes fx-shimmer {
+    to { background-position: -220% 0; }
+}
+
+@keyframes fx-twinkle {
+    from { opacity: 0.45; transform: scale(0.85); }
+    to { opacity: 1; transform: scale(1.1); }
+}
+
+@keyframes fx-flicker {
+    from { transform: scaleY(0.88) rotate(-3deg); }
+    to { transform: scaleY(1.08) rotate(3deg); }
+}
+
+@keyframes fx-pulse {
+    from { transform: scale(0.94); }
+    to { transform: scale(1.06); }
+}
+
+@keyframes fx-wave {
+    from { transform: skewY(-2deg); }
+    to { transform: skewY(2deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fx-twinkle, .fx-flame, .fx-pulse, .fx-wave, .fx-greeting-title, .fi-body .fi-topbar::after,
+    .fx-stage ~ .fi-simple-layout .fi-simple-main {
+        animation: none !important;
+    }
+}

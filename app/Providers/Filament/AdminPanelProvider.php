@@ -6,7 +6,7 @@ use App\Filament\Pages\Auth\ChangePassword;
 use App\Filament\Pages\Auth\ForgotPassword;
 use App\Filament\Pages\Auth\Login;
 use App\Filament\Pages\Auth\ResetPasswordWithOtp;
-use App\Support\DiwaliTheme;
+use App\Support\FestiveThemes;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -41,32 +41,24 @@ class AdminPanelProvider extends PanelProvider
             ->darkModeBrandLogo(asset('images/globalspace-logo.png'))
             ->brandLogoHeight('2.75rem')
             ->favicon(asset('images/globalspace-favicon.png'))
-            ->colors(fn (): array => DiwaliTheme::isActive()
-                ? [
-                    'primary' => Color::hex('#B0125B'),
-                    'warning' => Color::hex('#F59E0B'),
-                    'gray' => Color::Stone,
-                ]
-                : [
-                    'primary' => Color::hex('#0F7A78'),
-                    'warning' => Color::hex('#F5A623'),
-                ])
+            // Normal GlobalSpace colours, or the active celebration theme's (Organization → Celebration Themes).
+            ->colors(fn (): array => FestiveThemes::colors())
             ->renderHook(PanelsRenderHook::GLOBAL_SEARCH_AFTER, fn (): string => view('filament.partials.sister-company-logo')->render())
             ->renderHook(
                 PanelsRenderHook::SIMPLE_PAGE_START,
                 fn (): string => view('filament.partials.login-logos')->render(),
                 scopes: Login::class,
             )
-            ->renderHook(PanelsRenderHook::HEAD_END, fn (): string => DiwaliTheme::render('head'))
+            ->renderHook(PanelsRenderHook::HEAD_END, fn (): string => FestiveThemes::render('head'))
             ->renderHook(
                 PanelsRenderHook::BODY_START,
-                fn (): string => DiwaliTheme::render('stage'),
+                fn (): string => FestiveThemes::render('stage'),
                 scopes: [Login::class, ForgotPassword::class, ResetPasswordWithOtp::class],
             )
-            ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_BEFORE, fn (): string => DiwaliTheme::render('greeting'))
+            ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_BEFORE, fn (): string => FestiveThemes::render('greeting'))
             ->renderHook(
                 PanelsRenderHook::PAGE_START,
-                fn (): string => DiwaliTheme::render('welcome'),
+                fn (): string => FestiveThemes::render('welcome'),
                 scopes: Pages\Dashboard::class,
             )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
@@ -105,6 +97,7 @@ class AdminPanelProvider extends PanelProvider
                 ShareErrorsFromSession::class,
                 VerifyCsrfToken::class,
                 SubstituteBindings::class,
+                \App\Http\Middleware\ApplyFestivePreview::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])

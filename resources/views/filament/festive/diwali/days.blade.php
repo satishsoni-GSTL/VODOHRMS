@@ -5,7 +5,7 @@
         @foreach (\App\Support\DiwaliTheme::days() as $name => $date)
             <li @class([
                 'dw-day',
-                'is-main' => $name === 'Diwali',
+                'is-main' => $name === \App\Support\DiwaliTheme::mainDay(),
                 'is-today' => $date->isToday(),
                 'is-past' => $date->isPast() && ! $date->isToday(),
             ])>

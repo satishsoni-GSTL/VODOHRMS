@@ -4,12 +4,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Diwali theme
+    | Celebration themes
     |--------------------------------------------------------------------------
     |
-    | The portal switches to the Diwali look between these dates (inclusive, app
-    | timezone) and back to the regular GlobalSpace colours by itself afterwards.
-    | Set DIWALI_THEME=false to turn it off early without a code change.
+    | Themes (Diwali, New Year, Christmas, Annual Day, Birthday, Holi, Independence Day,
+    | Republic Day) are switched on and scheduled from Organization → Celebration Themes.
+    | FESTIVE_THEMES=false is a master switch that turns every theme off without a deploy.
+    |
+    */
+
+    'enabled' => env('FESTIVE_THEMES', true),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Diwali fallback
+    |--------------------------------------------------------------------------
+    |
+    | Only used until the festive_themes table is migrated (and to seed it). After that the
+    | Diwali dates are edited in the panel. DIWALI_THEME=false turns this fallback off.
     |
     */
 
